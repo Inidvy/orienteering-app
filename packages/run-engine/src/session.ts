@@ -83,7 +83,12 @@ export class RunSession {
    * caller (registry cache). The leg clock stops HERE — at tag read, never at
    * UI confirmation (decision P2-5A).
    */
-  punch(flagId: string, method: PunchMethod, tMs: number): PunchOutcome {
+  punch(
+    flagId: string,
+    method: PunchMethod,
+    tMs: number,
+    tagUid?: string,
+  ): PunchOutcome {
     if (this.phase_ === "finished" || this.phase_ === "abandoned") {
       return { result: "ignored_phase" };
     }
@@ -93,13 +98,13 @@ export class RunSession {
     // duplicate tap on the last-punched flag: earliest punch counts
     const last = this.assigned[this.assigned.length - 1];
     if (last && last.flagId === flagId) {
-      this.append({ kind: "punch", uuid: this.deps.uuid(), flagId, method, tMs });
+      this.append({ kind: "punch", uuid: this.deps.uuid(), flagId, tagUid, method, tMs });
       return { result: "duplicate" };
     }
 
     if (flagId !== expectedFlag) {
       // recorded + flagged, run continues (UI: "That's flag 7 — next is #4")
-      this.append({ kind: "punch", uuid: this.deps.uuid(), flagId, method, tMs });
+      this.append({ kind: "punch", uuid: this.deps.uuid(), flagId, tagUid, method, tMs });
       return {
         result: "wrong_flag",
         expectedShortCode: this.course.shortCodes[expectedFlag ?? ""] ?? "?",
@@ -115,6 +120,7 @@ export class RunSession {
       kind: "punch",
       uuid: this.deps.uuid(),
       flagId,
+      tagUid,
       method,
       tMs,
     };
@@ -187,6 +193,7 @@ export class RunSession {
           method: p.method,
           tMonotonicMs: p.tMs,
           flagId: p.flagId,
+          tagUid: p.tagUid,
         })),
       track: this.track_,
     };

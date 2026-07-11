@@ -3,11 +3,12 @@
   "version": "1.0.0",
   "main": "index.ts",
   "dependencies": {
+    "@orienteering/verification-core": "*",
+    "@supabase/supabase-js": "^2.110.2",
     "expo": "~57.0.4",
     "expo-status-bar": "~57.0.0",
     "react": "19.2.3",
-    "react-native": "0.86.0",
-    "@orienteering/verification-core": "*"
+    "react-native": "0.86.0"
   },
   "devDependencies": {
     "@types/react": "~19.2.2",

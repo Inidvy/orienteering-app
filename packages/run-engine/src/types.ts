@@ -35,6 +35,8 @@ export type RunEvent =
       kind: "punch";
       uuid: string;
       flagId: string;
+      /** raw NFC chip UID — the server re-resolves from THIS, catching clones */
+      tagUid?: string;
       method: PunchMethod;
       tMs: number;
     }
@@ -69,7 +71,9 @@ export interface SyncPayload {
     id: string;
     method: PunchMethod;
     tMonotonicMs: number;
+    /** local resolution — informational; the server re-resolves NFC via tagUid */
     flagId: string;
+    tagUid?: string;
   }[];
   track: TrackPoint[];
 }

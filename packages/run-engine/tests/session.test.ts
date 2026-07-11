@@ -174,4 +174,13 @@ describe("RunSession — provisional statuses (shared rules, decision 3A)", () =
     expect(payload.punches).toHaveLength(3);
     expect(payload.run.id).toBe(s.runId);
   });
+
+  it("NFC punches carry the raw tag UID so the server can re-resolve (clone defense)", () => {
+    const s = new RunSession(COURSE, makeDeps());
+    s.punch("S", "nfc", 0, "uid-S-chip");
+    s.punch("C1", "qr", 60_000); // QR punches have no chip UID
+    const punches = s.buildSyncPayload().punches;
+    expect(punches[0]).toMatchObject({ flagId: "S", tagUid: "uid-S-chip" });
+    expect(punches[1]!.tagUid).toBeUndefined();
+  });
 });
