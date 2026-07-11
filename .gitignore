@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.expo/
+*.log
+.env
+.env.*
+coverage/
+.DS_Store
+supabase/.temp/
