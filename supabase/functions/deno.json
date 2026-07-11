@@ -1,0 +1,6 @@
+{
+  "imports": {
+    "@orienteering/verification-core": "../../packages/verification-core/src/index.ts",
+    "@supabase/supabase-js": "npm:@supabase/supabase-js@2"
+  }
+}

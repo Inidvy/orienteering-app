@@ -22,7 +22,9 @@ packages/verification-core/   the trust rules — pure TS, imported by BOTH the
                               mobile app (live provisional statuses) and the
                               Supabase edge function (authoritative statuses)
 supabase/migrations/          Postgres/PostGIS schema + RLS write-authority
-apps/mobile/                  Expo app (Android + iOS)      [scaffold pending]
+supabase/functions/           sync-run + reverify edge functions (thin I/O
+                              wrappers — verifyRun() in core does the judging)
+apps/mobile/                  Expo app (Android + iOS)      [shell scaffolded]
 apps/admin-web/               flag/course admin             [scaffold pending]
 docs/                         design doc, wireframe, test plan
 ```

@@ -5,3 +5,12 @@ export { legStatus } from "./legStatus";
 export { runStatus } from "./runStatus";
 export { ageBand, classOf } from "./classes";
 export { checkElapsedBound, type TimeBoundVerdict } from "./timeIntegrity";
+export {
+  resolvePunches,
+  verifyRun,
+  type RawPunch,
+  type ResolvedPunch,
+  type TagRecord,
+  type VerifyRunInput,
+  type VerifyRunOutput,
+} from "./verifyRun";
