@@ -1,0 +1,13 @@
+{
+  "name": "@orienteering/run-engine",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@orienteering/verification-core": "*"
+  }
+}
