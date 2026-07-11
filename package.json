@@ -7,7 +7,7 @@
   ],
   "scripts": {
     "test": "npm run test -w @orienteering/verification-core && npm run test -w @orienteering/run-engine",
-    "typecheck": "npm run typecheck -w @orienteering/verification-core && npm run typecheck -w @orienteering/run-engine"
+    "typecheck": "npm run typecheck -w @orienteering/verification-core && npm run typecheck -w @orienteering/run-engine && npm run typecheck -w @orienteering/mobile"
   },
   "devDependencies": {
     "typescript": "^5.6.0",

@@ -1,5 +1,13 @@
 export { RunSession, type SessionDeps } from "./session";
 export {
+  DEFAULT_PUNCH_FLOW,
+  punchFlowInitial,
+  punchFlowReduce,
+  type PunchFlowConfig,
+  type PunchFlowEvent,
+  type PunchFlowState,
+} from "./punchFlow";
+export {
   memoryCheckpointStore,
   syncRun,
   type ServerLegVerdict,
