@@ -15,6 +15,8 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { FallbackPunchSheet } from "./FallbackPunchSheet";
+import { CourseMap } from "../map/CourseMap";
+import { useWindowDimensions } from "react-native";
 import {
   DEFAULT_PUNCH_FLOW,
   punchFlowInitial,
@@ -61,6 +63,7 @@ export function RunScreen({
   onExit,
 }: RunScreenProps) {
   const insets = useSafeAreaInsets();
+  const { width: screenW, height: screenH } = useWindowDimensions();
   const [flow, setFlow] = useState<PunchFlowState>(punchFlowInitial);
   const [elapsed, setElapsed] = useState<number | undefined>();
   const [feedback, setFeedback] = useState<string | null>(null);
@@ -182,10 +185,14 @@ export function RunScreen({
 
   return (
     <View style={styles.root}>
-      {/* Map placeholder — MapLibre + O-map raster tiles land with the tile
-          pipeline. Deliberately NO position dot, ever (P7-D12). */}
+      {/* Georeferenced O-map backdrop + course overlay. Deliberately NO live
+          position dot, ever (P7-D12). */}
       <View style={styles.map}>
-        <Text style={styles.mapNote}>O-map</Text>
+        <CourseMap
+          flags={session.course.flagOrder.map((f) => session.course.flagPositions[f]!)}
+          width={screenW}
+          height={screenH}
+        />
         {compassOn && (
           <Pressable
             style={styles.compass}
@@ -274,8 +281,7 @@ export function RunScreen({
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: color.surface },
-  map: { flex: 1, backgroundColor: "#eef3e2" },
-  mapNote: { margin: 8, color: color.muted, fontSize: t.min },
+  map: { flex: 1, backgroundColor: "#ffffff" },
   compass: {
     position: "absolute",
     top: 12,

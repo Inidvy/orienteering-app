@@ -11,3 +11,5 @@ tools/map-pipeline/node_modules/
 .gstack/
 tools/map-pipeline/hadiko_small.png
 tools/map-pipeline/overlay_*.png
+map/derived/
+map/export_300dpi.*

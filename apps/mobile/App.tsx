@@ -17,13 +17,14 @@ import { LeaderboardScreen } from "./src/screens/LeaderboardScreen";
 import { mockPunchProvider, type TagRead } from "./src/nfc/PunchProvider";
 import { color, type as t } from "./src/theme";
 
+// Demo course in the real mapped area (Karlsruhe, inside hadiko-bounds.json)
 const DEMO_COURSE: CourseSpec = {
   id: "demo",
   flagOrder: ["S", "C1", "F"],
   flagPositions: {
-    S: { lat: 60.0, lon: 10.0 },
-    C1: { lat: 60.0018, lon: 10.0 },
-    F: { lat: 60.0036, lon: 10.0 },
+    S: { lat: 49.0158, lon: 8.4262 },
+    C1: { lat: 49.0186, lon: 8.4318 },
+    F: { lat: 49.0208, lon: 8.4288 },
   },
   shortCodes: { S: "1", C1: "4", F: "9" },
   referenceLegTimesMs: [55_000, 58_000],
