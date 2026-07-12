@@ -47,3 +47,16 @@ nav button.on { background: var(--accent); color: #fff; }
 .chip { background: #eee; color: var(--ink); }
 .chip.on { background: var(--accent); color: #fff; }
 code { background: #f3f3f3; padding: 1px 5px; border-radius: 4px; }
+
+.plateModal {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+  display: flex; align-items: center; justify-content: center; z-index: 1000;
+}
+.plateCard {
+  background: #fff; border-radius: 16px; padding: 16px;
+  max-height: 92vh; overflow: auto; display: flex; flex-direction: column; gap: 12px;
+}
+.plateSvg { width: 320px; }
+.plateSvg svg { width: 100%; height: auto; }
+.plateBtns { display: flex; gap: 8px; justify-content: center; }
+

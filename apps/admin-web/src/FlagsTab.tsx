@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { createFlag, listFlags } from "./api";
+import { Plate } from "./Plate";
 
 type Flag = Awaited<ReturnType<typeof listFlags>>[number];
 
@@ -13,6 +14,7 @@ export function FlagsTab() {
   const [picked, setPicked] = useState<{ lat: number; lon: number } | null>(null);
   const [shortCode, setShortCode] = useState("");
   const [msg, setMsg] = useState("");
+  const [plate, setPlate] = useState<{ shortCode: string; ufid: string } | null>(null);
 
   const refresh = async () => {
     const f = await listFlags();
@@ -50,8 +52,10 @@ export function FlagsTab() {
     setMsg("");
     if (!picked || !shortCode.trim()) return;
     try {
-      const { ufid } = await createFlag(shortCode.trim(), picked.lat, picked.lon);
-      setMsg(`Created flag #${shortCode} — UFID ${ufid}`);
+      const sc = shortCode.trim();
+      const { ufid } = await createFlag(sc, picked.lat, picked.lon);
+      setMsg(`Created flag #${sc} — UFID ${ufid}`);
+      setPlate({ shortCode: sc, ufid }); // show the printable sticker at once
       setShortCode("");
       setPicked(null);
       newMarkerRef.current?.remove();
@@ -79,10 +83,18 @@ export function FlagsTab() {
         <h3>Flags ({flags.length})</h3>
         <ul className="list">
           {flags.map((f) => (
-            <li key={f.id}>#{f.short_code} · <code>{f.ufid}</code></li>
+            <li key={f.id}>
+              <span>#{f.short_code} · <code>{f.ufid}</code></span>
+              <button className="chip" onClick={() => setPlate({ shortCode: f.short_code, ufid: f.ufid })}>
+                sticker
+              </button>
+            </li>
           ))}
         </ul>
       </div>
+      {plate && (
+        <Plate shortCode={plate.shortCode} ufid={plate.ufid} onClose={() => setPlate(null)} />
+      )}
     </div>
   );
 }
