@@ -1,80 +1,79 @@
-// Printable flag sticker: orienteering control-flag graphic, the big number,
-// the QR (https://ol-ka.de/f/UFID), and the UFID. Preview + PNG download +
-// print. All in-browser; nothing to install for the user.
+// Printable flag sticker. The flag NUMBER is the code (no separate UFID): the
+// QR encodes https://ol-ka.de/f/<number>. The OL-KA control-flag mark is set
+// INTO the centre of the QR (error correction H keeps it scannable) and shown
+// large in the header. Preview + PNG download + print, all in-browser.
 
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 
 const HOST = "ol-ka.de";
 const W = 620;
-const H = 820;
+const H = 780;
 
-// Classic orienteering control marker: a square split on the diagonal,
-// white (top-left) + orange (bottom-right). Drawn at (x,y) size s.
-function controlFlag(x: number, y: number, s: number): string {
-  const o = "#ff7a00";
+// Orienteering control mark: square split on the diagonal, white + orange.
+function controlFlag(x: number, y: number, s: number, sw = 2): string {
   return (
     `<g transform="translate(${x} ${y})">` +
-    `<rect width="${s}" height="${s}" fill="#fff" stroke="#141414" stroke-width="2"/>` +
-    `<polygon points="${s},0 ${s},${s} 0,${s}" fill="${o}"/>` +
-    `<rect width="${s}" height="${s}" fill="none" stroke="#141414" stroke-width="2"/>` +
+    `<rect width="${s}" height="${s}" fill="#fff"/>` +
+    `<polygon points="${s},0 ${s},${s} 0,${s}" fill="#ff7a00"/>` +
+    `<rect width="${s}" height="${s}" fill="none" stroke="#141414" stroke-width="${sw}"/>` +
     `</g>`
   );
 }
 
-function plateSvg(shortCode: string, ufid: string, qrDataUrl: string): string {
-  const url = `${HOST}/f/${ufid}`;
-  const qrBox = 360, qrX = (W - qrBox) / 2, qrY = 150;
+function plateSvg(code: string, qrDataUrl: string): string {
+  const url = `${HOST}/f/${code}`;
+  const qrBox = 380, qrX = (W - qrBox) / 2, qrY = 150;
+  // centre logo badge on the QR (~24% -> safe with ECC H)
+  const badge = 96, bx = qrX + (qrBox - badge) / 2, by = qrY + (qrBox - badge) / 2;
+  const flagS = 58, fx = bx + (badge - flagS) / 2, fy = by + (badge - flagS) / 2;
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">` +
     `<rect x="6" y="6" width="${W - 12}" height="${H - 12}" rx="28" fill="#fff" stroke="#141414" stroke-width="5"/>` +
-    // header: control flag + wordmark
-    controlFlag(40, 40, 56) +
-    `<text x="${W - 40}" y="82" text-anchor="end" font-family="system-ui,sans-serif" ` +
-    `font-size="34" font-weight="800" fill="#d10f7c">OL·KA</text>` +
-    `<line x1="40" y1="120" x2="${W - 40}" y2="120" stroke="#eee" stroke-width="2"/>` +
+    // prominent header: control flag + big OL·KA
+    controlFlag(46, 44, 64, 3) +
+    `<text x="128" y="94" font-family="system-ui,sans-serif" font-size="52" ` +
+    `font-weight="800" fill="#d10f7c">OL<tspan fill="#141414">·</tspan>KA</text>` +
+    `<line x1="46" y1="128" x2="${W - 46}" y2="128" stroke="#eee" stroke-width="2"/>` +
     // QR
-    `<rect x="${qrX - 14}" y="${qrY - 14}" width="${qrBox + 28}" height="${qrBox + 28}" rx="16" fill="#fff" stroke="#eee" stroke-width="2"/>` +
     `<image x="${qrX}" y="${qrY}" width="${qrBox}" height="${qrBox}" href="${qrDataUrl}"/>` +
-    // big number
-    `<text x="${W / 2}" y="${qrY + qrBox + 140}" text-anchor="middle" ` +
-    `font-family="system-ui,sans-serif" font-size="150" font-weight="800" fill="#141414">${shortCode}</text>` +
-    // UFID pill
-    `<rect x="${W / 2 - 150}" y="${qrY + qrBox + 168}" width="300" height="58" rx="29" fill="#141414"/>` +
-    `<text x="${W / 2}" y="${qrY + qrBox + 207}" text-anchor="middle" ` +
-    `font-family="ui-monospace,Menlo,monospace" font-size="40" letter-spacing="7" fill="#fff">${ufid}</text>` +
+    // centre logo badge (white rounded clearing + control flag)
+    `<rect x="${bx}" y="${by}" width="${badge}" height="${badge}" rx="16" fill="#fff" stroke="#141414" stroke-width="3"/>` +
+    controlFlag(fx, fy, flagS, 2) +
+    // big number = the code
+    `<text x="${W / 2}" y="${qrY + qrBox + 150}" text-anchor="middle" ` +
+    `font-family="system-ui,sans-serif" font-size="150" font-weight="800" fill="#141414">${code}</text>` +
     // footer url
-    `<text x="${W / 2}" y="${H - 34}" text-anchor="middle" ` +
-    `font-family="system-ui,sans-serif" font-size="26" fill="#6b7280">${url}</text>` +
+    `<text x="${W / 2}" y="${H - 40}" text-anchor="middle" ` +
+    `font-family="system-ui,sans-serif" font-size="28" fill="#6b7280">${url}</text>` +
     `</svg>`
   );
 }
 
 export function Plate({
-  shortCode,
-  ufid,
+  code,
   onClose,
 }: {
-  shortCode: string;
-  ufid: string;
+  /** the flag number, used as the public code + big label */
+  code: string;
   onClose: () => void;
 }) {
   const [svg, setSvg] = useState("");
 
   useEffect(() => {
-    QRCode.toDataURL(`https://${HOST}/f/${ufid}`, {
-      margin: 0,
-      errorCorrectionLevel: "M",
-      width: 512,
-    }).then((qr) => setSvg(plateSvg(shortCode, ufid, qr)));
-  }, [shortCode, ufid]);
+    QRCode.toDataURL(`https://${HOST}/f/${code}`, {
+      margin: 1,
+      errorCorrectionLevel: "H", // 30% — survives the centre logo
+      width: 560,
+    }).then((qr) => setSvg(plateSvg(code, qr)));
+  }, [code]);
 
   const download = () => {
     const blob = new Blob([svg], { type: "image/svg+xml" });
     const url = URL.createObjectURL(blob);
     const img = new Image();
     img.onload = () => {
-      const scale = 2; // crisp
+      const scale = 2;
       const c = document.createElement("canvas");
       c.width = W * scale;
       c.height = H * scale;
@@ -87,7 +86,7 @@ export function Plate({
         if (!b) return;
         const a = document.createElement("a");
         a.href = URL.createObjectURL(b);
-        a.download = `flag-${shortCode}-${ufid}.png`;
+        a.download = `flag-${code}.png`;
         a.click();
       }, "image/png");
     };

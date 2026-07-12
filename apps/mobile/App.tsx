@@ -27,8 +27,7 @@ const DEMO_COURSE: CourseSpec = {
     C1: { lat: 49.0186, lon: 8.4318 },
     F: { lat: 49.0208, lon: 8.4288 },
   },
-  shortCodes: { S: "1", C1: "4", F: "9" },
-  ufids: { S: "URHNCL", C1: "LZRFAH", F: "TASXYH" }, // live DB UFIDs
+  shortCodes: { S: "1", C1: "4", F: "9" }, // the number IS the public code
   referenceLegTimesMs: [55_000, 58_000],
   referenceLabel: "course record pace",
 };

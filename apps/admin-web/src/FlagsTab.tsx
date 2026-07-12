@@ -14,7 +14,7 @@ export function FlagsTab() {
   const [picked, setPicked] = useState<{ lat: number; lon: number } | null>(null);
   const [shortCode, setShortCode] = useState("");
   const [msg, setMsg] = useState("");
-  const [plate, setPlate] = useState<{ shortCode: string; ufid: string } | null>(null);
+  const [plate, setPlate] = useState<string | null>(null); // flag number to sticker
 
   const refresh = async () => {
     const f = await listFlags();
@@ -53,9 +53,9 @@ export function FlagsTab() {
     if (!picked || !shortCode.trim()) return;
     try {
       const sc = shortCode.trim();
-      const { ufid } = await createFlag(sc, picked.lat, picked.lon);
-      setMsg(`Created flag #${sc} — UFID ${ufid}`);
-      setPlate({ shortCode: sc, ufid }); // show the printable sticker at once
+      await createFlag(sc, picked.lat, picked.lon);
+      setMsg(`Created flag #${sc}`);
+      setPlate(sc); // show the printable sticker at once
       setShortCode("");
       setPicked(null);
       newMarkerRef.current?.remove();
@@ -84,17 +84,15 @@ export function FlagsTab() {
         <ul className="list">
           {flags.map((f) => (
             <li key={f.id}>
-              <span>#{f.short_code} · <code>{f.ufid}</code></span>
-              <button className="chip" onClick={() => setPlate({ shortCode: f.short_code, ufid: f.ufid })}>
+              <span>#{f.short_code}</span>
+              <button className="chip" onClick={() => setPlate(f.short_code)}>
                 sticker
               </button>
             </li>
           ))}
         </ul>
       </div>
-      {plate && (
-        <Plate shortCode={plate.shortCode} ufid={plate.ufid} onClose={() => setPlate(null)} />
-      )}
+      {plate && <Plate code={plate} onClose={() => setPlate(null)} />}
     </div>
   );
 }
