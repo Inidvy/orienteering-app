@@ -7,3 +7,4 @@ dist/
 coverage/
 .DS_Store
 supabase/.temp/
+tools/map-pipeline/node_modules/
