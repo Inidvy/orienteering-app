@@ -1,0 +1,12 @@
+# Second Netlify site: the admin app (admin.ol-ka.de).
+# In Netlify set this site's Base directory to "apps/admin-web" — then it reads
+# this file, builds the Vite app, and publishes dist/.
+[build]
+  command = "npm install && npm run build"
+  publish = "dist"
+
+# SPA: every path serves index.html (magic-link returns land here)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
