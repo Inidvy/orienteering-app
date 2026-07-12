@@ -28,6 +28,7 @@ const DEMO_COURSE: CourseSpec = {
     F: { lat: 49.0208, lon: 8.4288 },
   },
   shortCodes: { S: "1", C1: "4", F: "9" },
+  ufids: { S: "URHNCL", C1: "LZRFAH", F: "TASXYH" }, // live DB UFIDs
   referenceLegTimesMs: [55_000, 58_000],
   referenceLabel: "course record pace",
 };

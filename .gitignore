@@ -14,3 +14,5 @@ tools/map-pipeline/overlay_*.png
 map/derived/
 map/export_300dpi.*
 *.autosave
+tools/qr/node_modules/
+tools/qr/out/

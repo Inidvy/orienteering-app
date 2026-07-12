@@ -13,24 +13,19 @@ import {
 } from "react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { color, touch, type as t } from "../theme";
+import { parseScan } from "../links";
 
 export function FallbackPunchSheet({
   onPunch,
   onClose,
 }: {
-  /** shortCode as printed on the plate; method qr or manual */
-  onPunch: (shortCode: string, method: "qr" | "manual") => void;
+  /** token = UFID (letters) or short number; method qr or manual */
+  onPunch: (token: string, method: "qr" | "manual") => void;
   onClose: () => void;
 }) {
   const [permission, requestPermission] = useCameraPermissions();
   const [manual, setManual] = useState("");
   const [scanned, setScanned] = useState(false);
-
-  const extractCode = (data: string): string | null => {
-    // QR payload is the short code, optionally wrapped (e.g. "...flag=4")
-    const m = data.match(/\d{1,4}/);
-    return m ? m[0] : null;
-  };
 
   return (
     <View style={styles.root}>
@@ -47,10 +42,10 @@ export function FallbackPunchSheet({
           barcodeScannerSettings={{ barcodeTypes: ["qr"] }}
           onBarcodeScanned={({ data }) => {
             if (scanned) return;
-            const code = extractCode(data);
-            if (code) {
+            const { token, kind } = parseScan(data);
+            if (kind !== "unknown") {
               setScanned(true);
-              onPunch(code, "qr");
+              onPunch(token, "qr");
             }
           }}
         />

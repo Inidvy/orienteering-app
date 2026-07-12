@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>OL-KA control</title>
+<meta name="description" content="You found an OL-KA orienteering control. Here's what it is." />
+<link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+<main class="wrap">
+  <header class="hero">
+    <div class="logo">OL<span>·</span>KA</div>
+    <div class="badge">Control <b id="ufid">…</b></div>
+    <h1>You found an orienteering control.</h1>
+    <p class="lead">
+      This is a fixed OL-KA control flag in Karlsruhe. With the OL-KA app you can
+      run a timed course between flags like this one, punch them as you go, and
+      see how your time ranks.
+    </p>
+    <div class="cta">
+      <a class="btn" id="open" href="#">Open in the OL-KA app</a>
+      <a class="btn ghost" href="/#get">Get the app</a>
+    </div>
+    <p class="hint" id="hint">Don't have the app yet? That's what the button on the right is for.</p>
+  </header>
+
+  <section id="how" class="how">
+    <h2>What is this?</h2>
+    <p>
+      OL-KA turns Karlsruhe into a permanent orienteering course. Flags stay out
+      all year. Anyone can run a course any day, get an honest verified time, and
+      compare with everyone else in their class (M/W, U14–O60).
+    </p>
+    <a class="btn ghost" href="/#how">See how it works →</a>
+  </section>
+
+  <footer><p>OL-KA · <a href="/">ol-ka.de</a></p></footer>
+</main>
+<script>
+  // /f/URHNCL -> URHNCL  (works with path or ?c= fallback)
+  var m = location.pathname.match(/\/f\/([A-Za-z0-9]+)/);
+  var ufid = (m && m[1]) || new URLSearchParams(location.search).get("c") || "";
+  ufid = ufid.toUpperCase();
+  document.getElementById("ufid").textContent = ufid || "—";
+  // deep link into the app (custom scheme + universal link both point here)
+  document.getElementById("open").href = ufid ? "olka://f/" + ufid : "/#get";
+</script>
+</body>
+</html>

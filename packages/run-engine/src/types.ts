@@ -20,6 +20,8 @@ export interface CourseSpec {
   flagPositions: Record<string, LatLon>;
   /** human-readable plate numbers for punch feedback copy */
   shortCodes: Record<string, string>;
+  /** public flag ids (6-letter UFID on the QR plate), by flagId */
+  ufids?: Record<string, string>;
   /**
    * cached reference splits (decision P7-D13-A): class record when one
    * exists, else overall course record — fetched at run start, offline-safe.

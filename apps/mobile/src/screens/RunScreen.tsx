@@ -72,9 +72,15 @@ export function RunScreen({
   const flowRef = useRef(flow);
   flowRef.current = flow;
 
-  // shortCode (printed number) -> flagId, for QR/manual punches
-  const flagByShortCode = (code: string): string | undefined =>
-    Object.entries(session.course.shortCodes).find(([, c]) => c === code)?.[0];
+  // resolve a scanned/typed token (UFID letters OR printed number) -> flagId
+  const flagByToken = (token: string): string | undefined => {
+    const up = token.toUpperCase();
+    const byUfid = Object.entries(session.course.ufids ?? {}).find(
+      ([, u]) => u.toUpperCase() === up,
+    )?.[0];
+    if (byUfid) return byUfid;
+    return Object.entries(session.course.shortCodes).find(([, c]) => c === token)?.[0];
+  };
 
   // 1 Hz timer repaint
   useEffect(() => {
@@ -170,11 +176,11 @@ export function RunScreen({
   }, [preStart, onExit, confirmAbandon]);
 
   const handleFallbackPunch = useCallback(
-    (shortCode: string, method: "qr" | "manual") => {
-      const flagId = flagByShortCode(shortCode);
+    (token: string, method: "qr" | "manual") => {
+      const flagId = flagByToken(token);
       setShowFallback(false);
       if (!flagId) {
-        setFeedback(`No flag with number ${shortCode} on this course.`);
+        setFeedback(`No flag "${token}" on this course.`);
         return;
       }
       handleOutcome(session.punch(flagId, method, monotonicNow()));
