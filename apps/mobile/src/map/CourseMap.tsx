@@ -1,23 +1,24 @@
-// Vector O-map + course overlay. Gestures run on the UI thread via reanimated
-// (no per-frame React re-render, so pan/zoom/rotate stay smooth). A small
-// compass rose rotates to keep pointing at true north as the map turns.
+// Vector O-map + course overlay. Zoom / rotate / pan handled by react-native-
+// gesture-handler driving core RN Animated values (useNativeDriver) applied to
+// a wrapping Animated.View — smooth, and works in Expo Go (no reanimated).
 // Sport-pure: no live position dot. Start triangle points at the first control.
 
-import { useMemo } from "react";
-import { StyleSheet, Text, View } from "react-native";
-import { Gesture, GestureDetector } from "react-native-gesture-handler";
-import Animated, {
-  useAnimatedProps,
-  useAnimatedStyle,
-  useSharedValue,
-} from "react-native-reanimated";
+import { useMemo, useRef } from "react";
+import { Animated, StyleSheet, Text, View } from "react-native";
+import {
+  PanGestureHandler,
+  PinchGestureHandler,
+  RotationGestureHandler,
+  State,
+  type PanGestureHandlerStateChangeEvent,
+  type PinchGestureHandlerStateChangeEvent,
+  type RotationGestureHandlerStateChangeEvent,
+} from "react-native-gesture-handler";
 import Svg, { Circle, G, Path, Polygon } from "react-native-svg";
 import type { LatLon } from "@orienteering/verification-core";
 import area from "../../assets/hadiko-area.json";
 import { styleFor } from "./mapStyle";
 import { color } from "../theme";
-
-const AnimatedG = Animated.createAnimatedComponent(G);
 
 const meta = (area as any).meta as { center: { lat: number; lon: number } };
 const M_PER_LAT = 111132;
@@ -105,64 +106,127 @@ export function CourseMap({ flags, nextIndex, width, height }: CourseMapProps) {
     return els;
   }, [pts, nextIndex]);
 
-  const fit = useMemo(() => {
+  // fit the course into the Svg viewBox (course-space metres)
+  const vb = useMemo(() => {
     const xs = pts.map((p) => p[0]), ys = pts.map((p) => p[1]);
     const cx = (Math.min(...xs) + Math.max(...xs)) / 2;
     const cy = (Math.min(...ys) + Math.max(...ys)) / 2;
-    const spanX = Math.max(...xs) - Math.min(...xs) + 140;
-    const spanY = Math.max(...ys) - Math.min(...ys) + 140;
-    return { cx, cy, scale: Math.min(width / spanX, height / spanY) };
+    const spanX = Math.max(...xs) - Math.min(...xs) + 160;
+    const spanY = Math.max(...ys) - Math.min(...ys) + 160;
+    const ar = width / height;
+    let w = spanX, h = spanY;
+    if (w / h > ar) h = w / ar; else w = h * ar;
+    return { minX: cx - w / 2, minY: cy - h / 2, w, h };
   }, [pts, width, height]);
 
-  // --- reanimated shared values (UI thread) ---
-  const scale = useSharedValue(1);
-  const rot = useSharedValue(0); // degrees
-  const tx = useSharedValue(0);
-  const ty = useSharedValue(0);
-  const sScale = useSharedValue(1);
-  const sRot = useSharedValue(0);
-  const sTx = useSharedValue(0);
-  const sTy = useSharedValue(0);
-
-  const pan = Gesture.Pan()
-    .onBegin(() => { "worklet"; sTx.value = tx.value; sTy.value = ty.value; })
-    .onUpdate((e) => { "worklet"; tx.value = sTx.value + e.translationX; ty.value = sTy.value + e.translationY; });
-  const pinch = Gesture.Pinch()
-    .onBegin(() => { "worklet"; sScale.value = scale.value; })
-    .onUpdate((e) => { "worklet"; scale.value = Math.max(0.4, Math.min(8, sScale.value * e.scale)); });
-  const rotate = Gesture.Rotation()
-    .onBegin(() => { "worklet"; sRot.value = rot.value; })
-    .onUpdate((e) => { "worklet"; rot.value = sRot.value + (e.rotation * 180) / Math.PI; });
-  const gesture = Gesture.Simultaneous(pan, pinch, rotate);
-
-  const { cx, cy, scale: fitScale } = fit;
-  const w2 = width / 2, h2 = height / 2;
-  const animatedProps = useAnimatedProps(() => {
-    "worklet";
-    const s = fitScale * scale.value;
-    return {
-      transform:
-        `translate(${w2 + tx.value} ${h2 + ty.value}) scale(${s}) ` +
-        `rotate(${rot.value}) translate(${-cx} ${-cy})`,
-    };
+  // --- gesture-driven transforms on the native thread ---
+  const pan = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
+  const baseScale = useRef(new Animated.Value(1)).current;
+  const pinch = useRef(new Animated.Value(1)).current;
+  const scale = Animated.multiply(baseScale, pinch);
+  const baseRot = useRef(new Animated.Value(0)).current;
+  const gestRot = useRef(new Animated.Value(0)).current;
+  const rotationRad = Animated.add(baseRot, gestRot);
+  const rotateDeg = rotationRad.interpolate({
+    inputRange: [-Math.PI, Math.PI],
+    outputRange: ["-180deg", "180deg"],
+  });
+  const counterRotate = rotationRad.interpolate({
+    inputRange: [-Math.PI, Math.PI],
+    outputRange: ["180deg", "-180deg"],
   });
 
-  const compassStyle = useAnimatedStyle(() => ({
-    transform: [{ rotate: `${-rot.value}deg` }],
-  }));
+  const pinchRef = useRef(null);
+  const rotRef = useRef(null);
+  const panRef = useRef(null);
+  const lastScale = useRef(1);
+  const lastRot = useRef(0);
+
+  const onPan = Animated.event(
+    [{ nativeEvent: { translationX: pan.x, translationY: pan.y } }],
+    { useNativeDriver: true },
+  );
+  const onPanState = (e: PanGestureHandlerStateChangeEvent) => {
+    if (e.nativeEvent.oldState === State.ACTIVE) pan.extractOffset();
+  };
+  const onPinch = Animated.event([{ nativeEvent: { scale: pinch } }], {
+    useNativeDriver: true,
+  });
+  const onPinchState = (e: PinchGestureHandlerStateChangeEvent) => {
+    if (e.nativeEvent.oldState === State.ACTIVE) {
+      lastScale.current *= e.nativeEvent.scale;
+      lastScale.current = Math.max(0.4, Math.min(8, lastScale.current));
+      baseScale.setValue(lastScale.current);
+      pinch.setValue(1);
+    }
+  };
+  const onRotate = Animated.event([{ nativeEvent: { rotation: gestRot } }], {
+    useNativeDriver: true,
+  });
+  const onRotateState = (e: RotationGestureHandlerStateChangeEvent) => {
+    if (e.nativeEvent.oldState === State.ACTIVE) {
+      lastRot.current += e.nativeEvent.rotation;
+      baseRot.setValue(lastRot.current);
+      gestRot.setValue(0);
+    }
+  };
 
   return (
-    <View style={{ width, height }}>
-      <GestureDetector gesture={gesture}>
-        <Svg width={width} height={height}>
-          <AnimatedG animatedProps={animatedProps}>
-            {mapLayer}
-            {overlay}
-          </AnimatedG>
-        </Svg>
-      </GestureDetector>
-      {/* mini compass — rotates to keep pointing north */}
-      <Animated.View style={[styles.compass, compassStyle]} pointerEvents="none">
+    <View style={{ width, height, overflow: "hidden" }}>
+      <PanGestureHandler
+        ref={panRef}
+        onGestureEvent={onPan}
+        onHandlerStateChange={onPanState}
+        minPointers={1}
+        maxPointers={2}
+        simultaneousHandlers={[pinchRef, rotRef]}
+      >
+        <Animated.View style={StyleSheet.absoluteFill}>
+          <PinchGestureHandler
+            ref={pinchRef}
+            onGestureEvent={onPinch}
+            onHandlerStateChange={onPinchState}
+            simultaneousHandlers={[panRef, rotRef]}
+          >
+            <Animated.View style={StyleSheet.absoluteFill}>
+              <RotationGestureHandler
+                ref={rotRef}
+                onGestureEvent={onRotate}
+                onHandlerStateChange={onRotateState}
+                simultaneousHandlers={[panRef, pinchRef]}
+              >
+                <Animated.View
+                  style={[
+                    StyleSheet.absoluteFill,
+                    {
+                      transform: [
+                        { translateX: pan.x },
+                        { translateY: pan.y },
+                        { rotate: rotateDeg },
+                        { scale },
+                      ],
+                    },
+                  ]}
+                >
+                  <Svg width={width} height={height}
+                    viewBox={`${vb.minX} ${vb.minY} ${vb.w} ${vb.h}`}>
+                    <G>
+                      {mapLayer}
+                      {overlay}
+                    </G>
+                  </Svg>
+                </Animated.View>
+              </RotationGestureHandler>
+            </Animated.View>
+          </PinchGestureHandler>
+        </Animated.View>
+      </PanGestureHandler>
+
+      {/* mini compass — counter-rotates to keep pointing north */}
+      <Animated.View
+        style={[styles.compass, { transform: [{ rotate: counterRotate }] }]}
+        pointerEvents="none"
+      >
         <Text style={styles.compassN}>N</Text>
         <View style={styles.needle} />
       </Animated.View>
