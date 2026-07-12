@@ -22,7 +22,7 @@ export function Plate({
   useEffect(() => {
     QRCode.toDataURL(`https://${HOST}/f/${code}`, {
       margin: 1,
-      errorCorrectionLevel: "H",
+      errorCorrectionLevel: "L", // no centre logo now -> lightest, least dense QR
       width: 640,
       color: { dark: ORANGE, light: "#ffffff" }, // orange QR on white
     }).then((qr) => {

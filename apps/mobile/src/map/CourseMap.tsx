@@ -42,9 +42,11 @@ export interface CourseMapProps {
   height: number;
   /** px from the top the compass should clear (below the top bar) */
   topInset?: number;
+  /** recorded GPS route to draw (finish/replay view) */
+  track?: LatLon[];
 }
 
-export function CourseMap({ flags, nextIndex, width, height, topInset = 96 }: CourseMapProps) {
+export function CourseMap({ flags, nextIndex, width, height, topInset = 96, track }: CourseMapProps) {
   const mapLayer = useMemo(() => {
     const feats = (area as any).features as {
       properties: { code: string };
@@ -78,6 +80,19 @@ export function CourseMap({ flags, nextIndex, width, height, topInset = 96 }: Co
 
   const overlay = useMemo(() => {
     const els: React.ReactNode[] = [];
+    // recorded GPS route (blue), drawn under the course
+    if (track && track.length > 1) {
+      const d = track
+        .map((p, i) => {
+          const [x, y] = toXY(p);
+          return `${i ? "L" : "M"}${x.toFixed(1)} ${y.toFixed(1)}`;
+        })
+        .join("");
+      els.push(
+        <Path key="gpstrack" d={d} stroke="#2b6fd4" strokeWidth={3} fill="none"
+          strokeLinejoin="round" strokeLinecap="round" opacity={0.9} />,
+      );
+    }
     for (let i = 1; i < pts.length; i++)
       els.push(
         <Path key={`leg${i}`}
@@ -106,7 +121,7 @@ export function CourseMap({ flags, nextIndex, width, height, topInset = 96 }: Co
       els.push(<Circle key="f2" cx={fx} cy={fy} r={22} fill="none" stroke={color.accent} strokeWidth={3.4} />);
     }
     return els;
-  }, [pts, nextIndex]);
+  }, [pts, nextIndex, track]);
 
   // The rendered Svg is a big square (2.2x the screen) centred on the screen,
   // so rotation/zoom pivot on the screen centre and there is map content to

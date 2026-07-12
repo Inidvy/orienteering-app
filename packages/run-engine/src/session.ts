@@ -46,6 +46,11 @@ export class RunSession {
     return this.log;
   }
 
+  /** the recorded GPS track (what you ran) */
+  get track(): readonly TrackPoint[] {
+    return this.track_;
+  }
+
   get startTimeMs(): number | undefined {
     return this.assigned[0]?.tMs;
   }

@@ -3,8 +3,9 @@
 // ranks pending. When the server verdict arrives, the screen upgrades in
 // place; a demotion gets its designed slot here, never a toast.
 
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import type { RunSession, ServerVerdict } from "@orienteering/run-engine";
+import { CourseMap } from "../map/CourseMap";
 import { color, type as t } from "../theme";
 import { strings } from "../strings";
 
@@ -25,9 +26,19 @@ export function FinishScreen({
 }) {
   const provisional = session.provisionalLegs();
   const legs = verdict?.legs ?? null;
+  const { width } = useWindowDimensions();
+  const courseFlags = session.course.flagOrder.map(
+    (f) => session.course.flagPositions[f]!,
+  );
+  const track = session.track.map((p) => ({ lat: p.lat, lon: p.lon }));
 
   return (
     <View style={styles.root}>
+      {/* your route (blue) over the course — "see where you ran" */}
+      <View style={styles.mapBox}>
+        <CourseMap flags={courseFlags} track={track} width={width - 32} height={200} />
+      </View>
+
       <Text style={styles.total}>
         {session.elapsedMs(0) !== undefined ? fmt(session.elapsedMs(0)!) : "--:--"}
       </Text>
@@ -78,6 +89,7 @@ export function FinishScreen({
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: color.surface, padding: 16, gap: 12 },
+  mapBox: { height: 200, borderRadius: 12, overflow: "hidden", backgroundColor: "#fff" },
   total: {
     fontSize: t.timer,
     fontWeight: "700",

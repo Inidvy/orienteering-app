@@ -46,7 +46,7 @@
        id="path1"
        sodipodi:nodetypes="ccccc" /><text
        xml:space="preserve"
-       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:170.667px;font-family:sans-serif;-inkscape-font-specification:'sans-serif Bold';text-align:start;letter-spacing:20px;writing-mode:lr-tb;direction:ltr;text-anchor:start;white-space:pre;inline-size:525.903;display:inline;fill:#ffffff;stroke:#ffffff;stroke-width:18.8976;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:137px;font-family:sans-serif;-inkscape-font-specification:'sans-serif Bold';text-align:start;letter-spacing:20px;writing-mode:lr-tb;direction:ltr;text-anchor:start;white-space:pre;inline-size:525.903;display:inline;fill:#ffffff;stroke:#ffffff;stroke-width:14;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none"
        x="111.21354"
        y="656.15991"
        id="text1"
@@ -55,7 +55,7 @@
          y="656.15991"
          id="tspan3">{{UFID}}</tspan></text><text
        xml:space="preserve"
-       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:53.3333px;font-family:'Berlin Sans FB';-inkscape-font-specification:'Berlin Sans FB Bold';text-align:start;letter-spacing:0px;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#ff7f2a;stroke:none;stroke-width:18.8976;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:53.3333px;font-family:'Berlin Sans FB';-inkscape-font-specification:'Berlin Sans FB Bold';text-align:start;letter-spacing:0px;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#ff7f2a;stroke:none;stroke-width:14;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none"
        x="22.242708"
        y="64.344978"
        id="text2"><tspan
@@ -81,7 +81,7 @@
          id="image1-4"
          x="126.61233"
          y="160.95381" /></g><rect
-       style="fill:none;stroke:none;stroke-width:18.8976;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none"
+       style="fill:none;stroke:none;stroke-width:14;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none"
        id="rect3"
        width="559.37006"
        height="559.37006"

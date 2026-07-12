@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { FallbackPunchSheet } from "./FallbackPunchSheet";
 import { CourseMap } from "../map/CourseMap";
 import { useWindowDimensions } from "react-native";
+import * as Location from "expo-location";
 import {
   DEFAULT_PUNCH_FLOW,
   punchFlowInitial,
@@ -94,6 +95,21 @@ export function RunScreen({
   useEffect(() => {
     const id = setInterval(() => setElapsed(session.elapsedMs(monotonicNow())), 1000);
     return () => clearInterval(id);
+  }, [session, monotonicNow]);
+
+  // record the GPS track for the whole run (foreground). Screen-off/background
+  // tracking needs a dev build; in Expo Go it records while the app is open.
+  useEffect(() => {
+    let sub: Location.LocationSubscription | undefined;
+    (async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") return;
+      sub = await Location.watchPositionAsync(
+        { accuracy: Location.Accuracy.BestForNavigation, distanceInterval: 3, timeInterval: 2000 },
+        (loc) => session.gps(loc.coords.latitude, loc.coords.longitude, monotonicNow()),
+      );
+    })();
+    return () => sub?.remove();
   }, [session, monotonicNow]);
 
   const dispatch = useCallback(
