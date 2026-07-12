@@ -2,9 +2,10 @@
 # In Netlify set this site's Base directory to "apps/admin-web" — then it reads
 # this file, builds the Vite app, and publishes dist/.
 [build]
-  # install the whole npm workspace from the repo root, then build this app
-  command = "npm --prefix ../.. install && npm run build"
-  publish = "dist"
+  # Netlify runs this from the repo root: install the workspace, build the
+  # admin package, publish its dist.
+  command = "npm install && npm run build -w @orienteering/admin-web"
+  publish = "apps/admin-web/dist"
 
 # SPA: every path serves index.html (magic-link returns land here)
 [[redirects]]
