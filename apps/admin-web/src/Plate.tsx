@@ -7,46 +7,47 @@ import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 
 const HOST = "ol-ka.de";
-const W = 620;
-const H = 780;
+const ORANGE = "#ff6a00";
+// A5 portrait proportions, matching template.svg
+const W = 560;
+const H = 794;
 
 // Orienteering control mark: square split on the diagonal, white + orange.
 function controlFlag(x: number, y: number, s: number, sw = 2): string {
   return (
     `<g transform="translate(${x} ${y})">` +
     `<rect width="${s}" height="${s}" fill="#fff"/>` +
-    `<polygon points="${s},0 ${s},${s} 0,${s}" fill="#ff7a00"/>` +
+    `<polygon points="${s},0 ${s},${s} 0,${s}" fill="${ORANGE}"/>` +
     `<rect width="${s}" height="${s}" fill="none" stroke="#141414" stroke-width="${sw}"/>` +
     `</g>`
   );
 }
 
 function plateSvg(code: string, qrDataUrl: string): string {
-  const url = `${HOST}/f/${code}`;
-  const qrBox = 380, qrX = (W - qrBox) / 2, qrY = 150;
+  const qrBox = 410, qrX = (W - qrBox) / 2, qrY = 90;
   // centre logo badge on the QR (~24% -> safe with ECC H)
-  const badge = 96, bx = qrX + (qrBox - badge) / 2, by = qrY + (qrBox - badge) / 2;
-  const flagS = 58, fx = bx + (badge - flagS) / 2, fy = by + (badge - flagS) / 2;
+  const badge = 104, bx = qrX + (qrBox - badge) / 2, by = qrY + (qrBox - badge) / 2;
+  const flagS = 64, fx = bx + (badge - flagS) / 2, fy = by + (badge - flagS) / 2;
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">` +
-    `<rect x="6" y="6" width="${W - 12}" height="${H - 12}" rx="28" fill="#fff" stroke="#141414" stroke-width="5"/>` +
-    // prominent header: control flag + big OL·KA
-    controlFlag(46, 44, 64, 3) +
-    `<text x="128" y="94" font-family="system-ui,sans-serif" font-size="52" ` +
-    `font-weight="800" fill="#d10f7c">OL<tspan fill="#141414">·</tspan>KA</text>` +
-    `<line x1="46" y1="128" x2="${W - 46}" y2="128" stroke="#eee" stroke-width="2"/>` +
-    // QR
-    `<image x="${qrX}" y="${qrY}" width="${qrBox}" height="${qrBox}" href="${qrDataUrl}"/>` +
-    // centre logo badge (white rounded clearing + control flag)
+    // white base + thin cut border
+    `<rect x="3" y="3" width="${W - 6}" height="${H - 6}" fill="#fff" stroke="#e5e5e5" stroke-width="2"/>` +
+    // bottom orange diagonal wedge (top-right corner down to the left edge)
+    `<path d="M ${W},0 L 0,${H * 0.72} L 0,${H} L ${W},${H} Z" fill="${ORANGE}"/>` +
+    // brand top-left
+    `<text x="34" y="70" font-family="system-ui,sans-serif" font-size="52" ` +
+    `font-weight="800" fill="${ORANGE}">ol-ka.de</text>` +
+    // white QR card
+    `<rect x="${qrX}" y="${qrY}" width="${qrBox}" height="${qrBox}" rx="26" fill="#fff" ` +
+    `stroke="#141414" stroke-width="3"/>` +
+    `<image x="${qrX + 20}" y="${qrY + 20}" width="${qrBox - 40}" height="${qrBox - 40}" href="${qrDataUrl}"/>` +
+    // control-flag logo in the QR centre
     `<rect x="${bx}" y="${by}" width="${badge}" height="${badge}" rx="16" fill="#fff" stroke="#141414" stroke-width="3"/>` +
     controlFlag(fx, fy, flagS, 2) +
-    // big code = the UFID (4 letters, monospaced)
-    `<text x="${W / 2}" y="${qrY + qrBox + 150}" text-anchor="middle" ` +
-    `font-family="ui-monospace,Menlo,monospace" font-size="126" font-weight="800" ` +
-    `letter-spacing="8" fill="#141414">${code}</text>` +
-    // footer url
-    `<text x="${W / 2}" y="${H - 40}" text-anchor="middle" ` +
-    `font-family="system-ui,sans-serif" font-size="28" fill="#6b7280">${url}</text>` +
+    // big code, white on the orange
+    `<text x="${W / 2}" y="${H - 90}" text-anchor="middle" ` +
+    `font-family="system-ui,sans-serif" font-size="150" font-weight="800" ` +
+    `letter-spacing="14" fill="#fff">${code}</text>` +
     `</svg>`
   );
 }
