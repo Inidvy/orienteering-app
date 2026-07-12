@@ -11,6 +11,9 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "ocad2geojson": "^2.1.23"
+    "fast-xml-parser": "^5.10.0",
+    "ocad2geojson": "^2.1.23",
+    "proj4": "^2.20.9",
+    "sharp": "^0.35.3"
   }
 }

@@ -1,0 +1,51 @@
+<!doctype html>
+<meta charset="utf8" />
+<title>Map calibration — click 2 points</title>
+<style>
+  body { font-family: system-ui, sans-serif; margin: 12px; }
+  #wrap { position: relative; display: inline-block; }
+  img { max-width: 100%; display: block; }
+  .dot { position: absolute; width: 14px; height: 14px; margin: -7px 0 0 -7px;
+         border: 2px solid #D10F7C; border-radius: 50%; background: rgba(209,15,124,.3); }
+  .lbl { position: absolute; margin: 6px 0 0 8px; color: #D10F7C; font-weight: 700; }
+  #out { margin-top: 10px; font-size: 15px; white-space: pre-line; }
+  code { background: #f0f0f0; padding: 2px 5px; }
+</style>
+<h3>Click 2 clearly identifiable spots (building corners, path crossings)</h3>
+<p>For each: note the pixel numbers below, then find the SAME spot in Google Maps,
+right-click it, and copy the lat, lon. Paste all of it back into the chat.</p>
+<div id="wrap">
+  <img id="img" src="export_300dpi.png" />
+</div>
+<div id="out">Point 1: (click the map)</div>
+<script>
+  const img = document.getElementById("img");
+  const wrap = document.getElementById("wrap");
+  const out = document.getElementById("out");
+  const pts = [];
+  img.addEventListener("click", (e) => {
+    if (pts.length >= 2) return;
+    const r = img.getBoundingClientRect();
+    // scale click back to the FULL-resolution pixel coordinate
+    const px = Math.round(((e.clientX - r.left) / r.width) * img.naturalWidth);
+    const py = Math.round(((e.clientY - r.top) / r.height) * img.naturalHeight);
+    pts.push({ px, py });
+
+    const dot = document.createElement("div");
+    dot.className = "dot";
+    dot.style.left = ((e.clientX - r.left)) + "px";
+    dot.style.top = ((e.clientY - r.top)) + "px";
+    wrap.appendChild(dot);
+    const lbl = document.createElement("div");
+    lbl.className = "lbl";
+    lbl.style.left = ((e.clientX - r.left)) + "px";
+    lbl.style.top = ((e.clientY - r.top)) + "px";
+    lbl.textContent = pts.length;
+    wrap.appendChild(lbl);
+
+    out.textContent = pts
+      .map((p, i) => `Point ${i + 1}: pixel ${p.px}, ${p.py}   → Google Maps lat,lon: ____`)
+      .join("\n") + (pts.length < 2 ? `\nPoint ${pts.length + 1}: (click the map)` :
+      "\n\nDone — paste both lines (with the lat,lon filled in) into the chat.");
+  });
+</script>
