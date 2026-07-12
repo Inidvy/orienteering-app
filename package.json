@@ -7,9 +7,11 @@
   ],
   "scripts": {
     "test": "npm run test -w @orienteering/verification-core && npm run test -w @orienteering/run-engine",
-    "typecheck": "npm run typecheck -w @orienteering/verification-core && npm run typecheck -w @orienteering/run-engine && npm run typecheck -w @orienteering/mobile"
+    "typecheck": "npm run typecheck -w @orienteering/verification-core && npm run typecheck -w @orienteering/run-engine && npm run typecheck -w @orienteering/mobile",
+    "bundle:functions": "esbuild packages/verification-core/src/index.ts --bundle --format=esm --outfile=supabase/functions/_shared/verification-core.mjs"
   },
   "devDependencies": {
+    "esbuild": "^0.28.1",
     "typescript": "^5.6.0",
     "vitest": "^2.1.0"
   }

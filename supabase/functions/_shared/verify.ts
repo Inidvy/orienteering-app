@@ -3,15 +3,41 @@
 // this module only fetches rows, calls verifyRun, and writes results with
 // the service role (write-authority decision 1A).
 
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import {
-  verifyRun,
-  type RawPunch,
-  type TagRecord,
-  type TrackPoint,
-  type TuningConfig,
-  type VerifyRunOutput,
-} from "@orienteering/verification-core";
+import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2";
+// bundled from packages/verification-core by `npm run bundle:functions` —
+// a build artifact, not a second implementation (decision 3A still holds)
+// @ts-ignore bundled JS module
+import { verifyRun } from "./verification-core.mjs";
+
+type RawPunch = {
+  uuid: string;
+  tagUid?: string;
+  flagId?: string;
+  method: "nfc" | "qr" | "manual";
+  tMonotonicMs: number;
+};
+type TagRecord = { uid: string; flagId: string; retiredAtMs?: number };
+type TrackPoint = { lat: number; lon: number; tMonotonicMs: number };
+type TuningConfig = {
+  version: number;
+  proximityToleranceM: number;
+  speedCeilingMps: number;
+  maxTrackGapS: number;
+  speedWindowS: number;
+  punchTrackToleranceS: number;
+};
+type VerifyRunOutput = {
+  status: "verified" | "partial" | "unverified";
+  runReasons: string[];
+  totalTimeMs?: number;
+  configVersion: number;
+  legs: {
+    status: "verified" | "partial" | "unverified";
+    reasons: string[];
+    legTimeMs?: number;
+    configVersion: number;
+  }[];
+};
 
 export function serviceClient(): SupabaseClient {
   return createClient(
@@ -50,25 +76,30 @@ export async function verifyStoredRun(
     .single();
   if (runErr) throw runErr;
 
-  const [{ data: courseFlags }, { data: punches }, { data: trackRow }, tags, cfg] =
+  const [{ data: courseFlags }, { data: punches }, { data: trackPts }, tags, cfg] =
     await Promise.all([
       db
         .from("course_flags")
-        .select("flag_id, position, flags(id, position)")
+        .select("flag_id, position")
         .eq("course_id", run.course_id)
         .order("position"),
       db.from("punches").select("*").eq("run_id", runId),
-      db.from("tracks").select("geom").eq("run_id", runId).maybeSingle(),
+      db.from("track_coords").select("lat, lon, m").eq("run_id", runId),
       db.from("tags").select("uid, flag_id, retired_at"),
       loadTuning(db),
     ]);
 
   const courseFlagOrder = (courseFlags ?? []).map((cf: any) => cf.flag_id);
+  // geography comes back as WKB hex via PostgREST — read plain numbers from
+  // the flag_coords view instead
+  const { data: flagRows, error: flagErr } = await db
+    .from("flag_coords")
+    .select("flag_id, lat, lon")
+    .in("flag_id", courseFlagOrder);
+  if (flagErr) throw flagErr;
   const flagPositions: Record<string, { lat: number; lon: number }> = {};
-  for (const cf of courseFlags ?? []) {
-    // flags.position is PostGIS geography; PostgREST returns GeoJSON
-    const coords = (cf as any).flags?.position?.coordinates;
-    if (coords) flagPositions[cf.flag_id] = { lon: coords[0], lat: coords[1] };
+  for (const f of flagRows ?? []) {
+    flagPositions[f.flag_id] = { lat: Number(f.lat), lon: Number(f.lon) };
   }
 
   const rawPunches: RawPunch[] = (punches ?? []).map((p: any) => ({
@@ -85,10 +116,11 @@ export async function verifyStoredRun(
     retiredAtMs: t.retired_at ? Date.parse(t.retired_at) : undefined,
   }));
 
-  // LINESTRING M — GeoJSON coordinates [lon, lat, m(=monotonic ms)]
-  const track: TrackPoint[] = ((trackRow?.geom as any)?.coordinates ?? []).map(
-    (c: number[]) => ({ lon: c[0]!, lat: c[1]!, tMonotonicMs: c[2] ?? 0 }),
-  );
+  const track: TrackPoint[] = (trackPts ?? []).map((p: any) => ({
+    lon: Number(p.lon),
+    lat: Number(p.lat),
+    tMonotonicMs: Number(p.m),
+  }));
 
   const out = verifyRun({
     courseFlagOrder,
