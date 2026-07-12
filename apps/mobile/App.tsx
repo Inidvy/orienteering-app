@@ -5,6 +5,7 @@
 
 import { useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { RunSession, type CourseSpec } from "@orienteering/run-engine";
 import type { LeaderboardRun } from "@orienteering/verification-core";
@@ -63,6 +64,14 @@ const demoPorts: OnboardingPorts = {
 type Screen = "onboarding" | "browse" | "run" | "finish" | "leaderboard";
 
 export default function App() {
+  return (
+    <SafeAreaProvider>
+      <Shell />
+    </SafeAreaProvider>
+  );
+}
+
+function Shell() {
   const [screen, setScreen] = useState<Screen>("onboarding");
   const t0 = useRef(Date.now());
   const monotonicNow = () => Date.now() - t0.current;
@@ -81,22 +90,25 @@ export default function App() {
   switch (screen) {
     case "onboarding":
       return (
-        <View style={{ flex: 1 }}>
+        <SafeAreaView style={{ flex: 1 }}>
           <OnboardingScreen ports={demoPorts} onComplete={() => setScreen("browse")} />
           <StatusBar style="auto" />
-        </View>
+        </SafeAreaView>
       );
 
     case "browse":
       return (
-        <CourseBrowseScreen
-          courses={[DEMO_LISTING]}
-          onStart={startRun}
-          onLeaderboard={() => setScreen("leaderboard")}
-        />
+        <SafeAreaView style={{ flex: 1 }}>
+          <CourseBrowseScreen
+            courses={[DEMO_LISTING]}
+            onStart={startRun}
+            onLeaderboard={() => setScreen("leaderboard")}
+          />
+        </SafeAreaView>
       );
 
     case "run":
+      // RunScreen handles its own insets (full-bleed map behind the notch)
       return (
         <View style={{ flex: 1 }}>
           <RunScreen
@@ -106,6 +118,7 @@ export default function App() {
             monotonicNow={monotonicNow}
             onFinished={() => setScreen("finish")}
             onAbandoned={() => setScreen("browse")}
+            onExit={() => setScreen("browse")}
           />
           {/* DEV: simulate the next tag read (removed in field builds) */}
           <View style={styles.devRow}>
@@ -124,17 +137,17 @@ export default function App() {
 
     case "finish":
       return (
-        <View style={{ flex: 1 }}>
+        <SafeAreaView style={{ flex: 1 }}>
           <FinishScreen session={sessionRef.current!} />
           <Pressable style={styles.link} onPress={() => setScreen("leaderboard")}>
             <Text style={styles.linkText}>See yourself on the leaderboard →</Text>
           </Pressable>
-        </View>
+        </SafeAreaView>
       );
 
     case "leaderboard":
       return (
-        <View style={{ flex: 1 }}>
+        <SafeAreaView style={{ flex: 1 }}>
           <LeaderboardScreen
             courseName={DEMO_LISTING.name}
             runs={DEMO_BOARD}
@@ -143,7 +156,7 @@ export default function App() {
           <Pressable style={styles.link} onPress={() => setScreen("browse")}>
             <Text style={styles.linkText}>‹ Courses</Text>
           </Pressable>
-        </View>
+        </SafeAreaView>
       );
   }
 }

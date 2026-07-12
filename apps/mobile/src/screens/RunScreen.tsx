@@ -13,6 +13,8 @@ import {
   Vibration,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { FallbackPunchSheet } from "./FallbackPunchSheet";
 import {
   DEFAULT_PUNCH_FLOW,
   punchFlowInitial,
@@ -45,6 +47,8 @@ export interface RunScreenProps {
   monotonicNow: () => number;
   onFinished: () => void;
   onAbandoned: () => void;
+  /** back out before the run has started (pre-start only) */
+  onExit: () => void;
 }
 
 export function RunScreen({
@@ -54,13 +58,20 @@ export function RunScreen({
   monotonicNow,
   onFinished,
   onAbandoned,
+  onExit,
 }: RunScreenProps) {
+  const insets = useSafeAreaInsets();
   const [flow, setFlow] = useState<PunchFlowState>(punchFlowInitial);
   const [elapsed, setElapsed] = useState<number | undefined>();
   const [feedback, setFeedback] = useState<string | null>(null);
   const [compassOn, setCompassOn] = useState(true);
+  const [showFallback, setShowFallback] = useState(false);
   const flowRef = useRef(flow);
   flowRef.current = flow;
+
+  // shortCode (printed number) -> flagId, for QR/manual punches
+  const flagByShortCode = (code: string): string | undefined =>
+    Object.entries(session.course.shortCodes).find(([, c]) => c === code)?.[0];
 
   // 1 Hz timer repaint
   useEffect(() => {
@@ -133,7 +144,7 @@ export function RunScreen({
     }
   }, [dispatch, handleOutcome, monotonicNow, punchProvider, resolveTag, session]);
 
-  const onTimerLongPress = useCallback(() => {
+  const confirmAbandon = useCallback(() => {
     Alert.alert(strings.abandonPrompt, undefined, [
       { text: strings.resumeYes, style: "cancel" },
       {
@@ -148,6 +159,26 @@ export function RunScreen({
   }, [session, monotonicNow, onAbandoned]);
 
   const preStart = session.phase === "pre-start";
+
+  // back: pre-start exits freely; mid-run it means abandoning (with confirm)
+  const onBack = useCallback(() => {
+    if (preStart) onExit();
+    else confirmAbandon();
+  }, [preStart, onExit, confirmAbandon]);
+
+  const handleFallbackPunch = useCallback(
+    (shortCode: string, method: "qr" | "manual") => {
+      const flagId = flagByShortCode(shortCode);
+      setShowFallback(false);
+      if (!flagId) {
+        setFeedback(`No flag with number ${shortCode} on this course.`);
+        return;
+      }
+      handleOutcome(session.punch(flagId, method, monotonicNow()));
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [session, monotonicNow, handleOutcome],
+  );
 
   return (
     <View style={styles.root}>
@@ -171,8 +202,16 @@ export function RunScreen({
         )}
       </View>
 
-      <View style={styles.topBar}>
-        <Pressable onLongPress={onTimerLongPress} delayLongPress={800}>
+      <View style={[styles.topBar, { paddingTop: insets.top + 8 }]}>
+        <Pressable
+          style={styles.back}
+          onPress={onBack}
+          accessibilityRole="button"
+          accessibilityLabel={preStart ? "back" : "abandon run"}
+        >
+          <Text style={styles.backText}>‹</Text>
+        </Pressable>
+        <Pressable onLongPress={confirmAbandon} delayLongPress={800}>
           <Text style={styles.timer}>
             {elapsed !== undefined ? fmt(elapsed) : "--:--"}
           </Text>
@@ -190,23 +229,44 @@ export function RunScreen({
         </View>
       )}
 
-      {/* iOS punch button; on Android reader-mode devices this auto-arms */}
-      {!punchProvider.autoArms && (
+      {/* punch row: NFC button (iOS-style arm) + always-available QR/number */}
+      <View style={[styles.punchRow, { paddingBottom: insets.bottom }]}>
+        {!punchProvider.autoArms && (
+          <Pressable
+            style={[
+              styles.punch,
+              flow.kind === "scanning" && styles.punchScanning,
+            ]}
+            onPress={() => {
+              if (flow.kind === "idle" || flow.kind === "failed") void arm();
+              if (flow.kind === "fallback") setShowFallback(true);
+            }}
+            accessibilityRole="button"
+          >
+            <Text style={styles.punchText}>
+              {flow.kind === "scanning"
+                ? strings.scanning
+                : flow.kind === "fallback"
+                  ? strings.nfcReadFail
+                  : strings.punchButton(session.expectedShortCode ?? "—")}
+            </Text>
+          </Pressable>
+        )}
         <Pressable
-          style={[styles.punch, flow.kind === "scanning" && styles.punchScanning]}
-          onPress={() => {
-            if (flow.kind === "idle" || flow.kind === "failed") void arm();
-          }}
+          style={styles.qrBtn}
+          onPress={() => setShowFallback(true)}
           accessibilityRole="button"
+          accessibilityLabel="punch by QR code or flag number"
         >
-          <Text style={styles.punchText}>
-            {flow.kind === "scanning"
-              ? strings.scanning
-              : flow.kind === "fallback"
-                ? strings.nfcReadFail
-                : strings.punchButton(session.expectedShortCode ?? "—")}
-          </Text>
+          <Text style={styles.qrBtnText}>QR{"\n"}#</Text>
         </Pressable>
+      </View>
+
+      {showFallback && (
+        <FallbackPunchSheet
+          onPunch={handleFallbackPunch}
+          onClose={() => setShowFallback(false)}
+        />
       )}
     </View>
   );
@@ -257,12 +317,36 @@ const styles = StyleSheet.create({
     fontVariant: ["tabular-nums"],
   },
   next: { color: color.onPanel, fontSize: t.nextControl, fontWeight: "600" },
+  back: {
+    width: touch.default,
+    height: touch.default,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  backText: { color: color.onPanel, fontSize: 32, fontWeight: "700" },
+  punchRow: { flexDirection: "row", backgroundColor: color.panel },
+  qrBtn: {
+    width: touch.punchButton + 16,
+    minHeight: touch.punchButton,
+    backgroundColor: color.panel,
+    alignItems: "center",
+    justifyContent: "center",
+    borderLeftWidth: 1,
+    borderLeftColor: "#333",
+  },
+  qrBtnText: {
+    color: color.onPanel,
+    fontSize: t.body,
+    fontWeight: "700",
+    textAlign: "center",
+  },
   sheet: {
     backgroundColor: color.panel,
     padding: 16,
   },
   sheetText: { color: color.onPanel, fontSize: t.body, fontWeight: "600" },
   punch: {
+    flex: 1,
     minHeight: touch.punchButton,
     backgroundColor: color.accent,
     alignItems: "center",
