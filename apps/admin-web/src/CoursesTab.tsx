@@ -38,7 +38,7 @@ export function CoursesTab() {
     }
   };
 
-  const shortOf = (id: string) => flags.find((f) => f.id === id)?.short_code ?? "?";
+  const shortOf = (id: string) => flags.find((f) => f.id === id)?.ufid ?? "?";
 
   return (
     <div className="tab">
@@ -56,7 +56,7 @@ export function CoursesTab() {
               <button key={f.id}
                 className={idx >= 0 ? "chip on" : "chip"}
                 onClick={() => toggle(f.id)}>
-                {idx >= 0 ? `${idx + 1}. ` : ""}#{f.short_code}
+                {idx >= 0 ? `${idx + 1}. ` : ""}{f.ufid}
               </button>
             );
           })}

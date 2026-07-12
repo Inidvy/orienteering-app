@@ -40,9 +40,10 @@ function plateSvg(code: string, qrDataUrl: string): string {
     // centre logo badge (white rounded clearing + control flag)
     `<rect x="${bx}" y="${by}" width="${badge}" height="${badge}" rx="16" fill="#fff" stroke="#141414" stroke-width="3"/>` +
     controlFlag(fx, fy, flagS, 2) +
-    // big number = the code
+    // big code = the UFID (4 letters, monospaced)
     `<text x="${W / 2}" y="${qrY + qrBox + 150}" text-anchor="middle" ` +
-    `font-family="system-ui,sans-serif" font-size="150" font-weight="800" fill="#141414">${code}</text>` +
+    `font-family="ui-monospace,Menlo,monospace" font-size="126" font-weight="800" ` +
+    `letter-spacing="8" fill="#141414">${code}</text>` +
     // footer url
     `<text x="${W / 2}" y="${H - 40}" text-anchor="middle" ` +
     `font-family="system-ui,sans-serif" font-size="28" fill="#6b7280">${url}</text>` +
@@ -54,7 +55,7 @@ export function Plate({
   code,
   onClose,
 }: {
-  /** the flag number, used as the public code + big label */
+  /** the 4-letter UFID, used as the public code + big label */
   code: string;
   onClose: () => void;
 }) {

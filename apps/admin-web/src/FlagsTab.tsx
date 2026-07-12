@@ -12,9 +12,8 @@ export function FlagsTab() {
   const newMarkerRef = useRef<L.Marker | null>(null);
   const [flags, setFlags] = useState<Flag[]>([]);
   const [picked, setPicked] = useState<{ lat: number; lon: number } | null>(null);
-  const [shortCode, setShortCode] = useState("");
   const [msg, setMsg] = useState("");
-  const [plate, setPlate] = useState<string | null>(null); // flag number to sticker
+  const [plate, setPlate] = useState<string | null>(null); // UFID to sticker
 
   const refresh = async () => {
     const f = await listFlags();
@@ -24,7 +23,7 @@ export function FlagsTab() {
     for (const fl of f) {
       if (!fl.lat) continue;
       L.circleMarker([fl.lat, fl.lon], { radius: 8, color: "#d10f7c", fillOpacity: 0.6 })
-        .bindTooltip(`#${fl.short_code} · ${fl.ufid}`)
+        .bindTooltip(fl.ufid)
         .addTo(layer);
     }
   };
@@ -50,13 +49,11 @@ export function FlagsTab() {
 
   const save = async () => {
     setMsg("");
-    if (!picked || !shortCode.trim()) return;
+    if (!picked) return;
     try {
-      const sc = shortCode.trim();
-      await createFlag(sc, picked.lat, picked.lon);
-      setMsg(`Created flag #${sc}`);
-      setPlate(sc); // show the printable sticker at once
-      setShortCode("");
+      const { ufid } = await createFlag(picked.lat, picked.lon);
+      setMsg(`Created flag ${ufid}`);
+      setPlate(ufid); // show the printable sticker at once
       setPicked(null);
       newMarkerRef.current?.remove();
       await refresh();
@@ -70,22 +67,20 @@ export function FlagsTab() {
       <div id="flagmap" className="map" />
       <div className="panel">
         <h3>Add a flag</h3>
-        <p className="hint">Click the map to place it, then give it a number.</p>
+        <p className="hint">Click the map where the flag stands, then create it. It gets a 4-letter code automatically.</p>
         {picked && (
           <p className="coord">{picked.lat.toFixed(5)}, {picked.lon.toFixed(5)}</p>
         )}
-        <input placeholder="short number (e.g. 31)" value={shortCode}
-          onChange={(e) => setShortCode(e.target.value)} />
-        <button onClick={save} disabled={!picked || !shortCode.trim()}>
-          Create flag
+        <button onClick={save} disabled={!picked}>
+          Create flag here
         </button>
         {msg && <p className="ok">{msg}</p>}
         <h3>Flags ({flags.length})</h3>
         <ul className="list">
           {flags.map((f) => (
             <li key={f.id}>
-              <span>#{f.short_code}</span>
-              <button className="chip" onClick={() => setPlate(f.short_code)}>
+              <span><code>{f.ufid}</code></span>
+              <button className="chip" onClick={() => setPlate(f.ufid)}>
                 sticker
               </button>
             </li>

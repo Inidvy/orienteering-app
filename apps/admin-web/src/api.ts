@@ -19,18 +19,15 @@ export async function listFlags(): Promise<
 }
 
 export async function createFlag(
-  shortCode: string,
   lat: number,
   lon: number,
   photoUrl?: string,
 ): Promise<{ id: string; ufid: string }> {
+  // no number to type: the DB trigger assigns the 4-letter UFID and sets
+  // short_code = ufid
   const { data, error } = await supabase
     .from("flags")
-    .insert({
-      short_code: shortCode,
-      position: `POINT(${lon} ${lat})`,
-      photo_url: photoUrl ?? null,
-    })
+    .insert({ position: `POINT(${lon} ${lat})`, photo_url: photoUrl ?? null })
     .select("id, ufid")
     .single();
   if (error) throw error;
