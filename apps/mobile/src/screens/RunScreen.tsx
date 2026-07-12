@@ -73,12 +73,10 @@ export function RunScreen({
   const flowRef = useRef(flow);
   flowRef.current = flow;
 
-  // control descriptions (Postenbeschreibung): Start / 1 / 2 / … / Finish + code
+  // control descriptions (Postenbeschreibung): symbol/number + code, no text
   const descriptions = session.course.flagOrder.map((fid, i, arr) => {
-    const label =
-      i === 0 ? "Start" : i === arr.length - 1 ? "Finish" : `Control ${i}`;
     const code = session.course.ufids?.[fid] ?? session.course.shortCodes[fid] ?? "?";
-    return { label, code, symbol: i === 0 ? "△" : i === arr.length - 1 ? "◎" : `${i}` };
+    return { code, symbol: i === 0 ? "△" : i === arr.length - 1 ? "◎" : `${i}` };
   });
 
   // resolve a scanned/typed token (UFID letters OR printed number) -> flagId
@@ -258,11 +256,9 @@ export function RunScreen({
 
       {showDesc && (
         <View style={[styles.descPanel, { top: insets.top + 60 }]}>
-          <Text style={styles.descTitle}>Controls</Text>
           {descriptions.map((d, i) => (
             <View key={i} style={styles.descRow}>
               <Text style={styles.descSym}>{d.symbol}</Text>
-              <Text style={styles.descLabel}>{d.label}</Text>
               <Text style={styles.descCode}>{d.code}</Text>
             </View>
           ))}

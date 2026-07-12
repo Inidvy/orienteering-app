@@ -14,7 +14,7 @@ import {
   type PinchGestureHandlerStateChangeEvent,
   type RotationGestureHandlerStateChangeEvent,
 } from "react-native-gesture-handler";
-import Svg, { Circle, G, Path, Polygon } from "react-native-svg";
+import Svg, { Circle, G, Path, Polygon, Text as SvgText } from "react-native-svg";
 import type { LatLon } from "@orienteering/verification-core";
 import area from "../../assets/hadiko-area.json";
 import { styleFor } from "./mapStyle";
@@ -93,12 +93,26 @@ export function CourseMap({ flags, nextIndex, width, height, topInset = 96, trac
           strokeLinejoin="round" strokeLinecap="round" opacity={0.9} />,
       );
     }
-    for (let i = 1; i < pts.length; i++)
+    // marker radius per course position (start / control / finish)
+    const radiusAt = (i: number) =>
+      i === 0 ? 19 : i === pts.length - 1 ? 22 : 18;
+    const GAP = 5; // legs stop this far outside the circle
+
+    // legs — trimmed so they start/end just outside each circle
+    for (let i = 1; i < pts.length; i++) {
+      const [ax, ay] = pts[i - 1]!, [bx, by] = pts[i]!;
+      const dx = bx - ax, dy = by - ay;
+      const L = Math.hypot(dx, dy) || 1;
+      const ux = dx / L, uy = dy / L;
+      const rA = radiusAt(i - 1) + GAP, rB = radiusAt(i) + GAP;
+      if (L <= rA + rB) continue; // too close — no visible leg
       els.push(
         <Path key={`leg${i}`}
-          d={`M${pts[i - 1]![0]} ${pts[i - 1]![1]}L${pts[i]![0]} ${pts[i]![1]}`}
-          stroke={color.accent} strokeWidth={2} fill="none" />,
+          d={`M${ax + ux * rA} ${ay + uy * rA}L${bx - ux * rB} ${by - uy * rB}`}
+          stroke={color.accent} strokeWidth={2.6} fill="none" />,
       );
+    }
+
     if (pts.length >= 2) {
       const [sx, sy] = pts[0]!, [cx, cy] = pts[1]!;
       const ang = (Math.atan2(cy - sy, cx - sx) * 180) / Math.PI + 90;
@@ -110,11 +124,18 @@ export function CourseMap({ flags, nextIndex, width, height, topInset = 96, trac
           transform={`translate(${sx} ${sy}) rotate(${ang})`} />,
       );
     }
-    for (let i = 1; i < pts.length - 1; i++)
+    for (let i = 1; i < pts.length - 1; i++) {
+      const [x, y] = pts[i]!;
       els.push(
-        <Circle key={`ctrl${i}`} cx={pts[i]![0]} cy={pts[i]![1]} r={18}
+        <Circle key={`ctrl${i}`} cx={x} cy={y} r={18}
           fill="none" stroke={color.accent} strokeWidth={nextIndex === i ? 5 : 3.4} />,
       );
+      // small control number, offset up-right so it doesn't clutter the circle
+      els.push(
+        <SvgText key={`num${i}`} x={x + 20} y={y - 16} fontSize={17}
+          fontWeight="bold" fill={color.accent}>{i}</SvgText>,
+      );
+    }
     if (pts.length > 1) {
       const [fx, fy] = pts[pts.length - 1]!;
       els.push(<Circle key="f1" cx={fx} cy={fy} r={15} fill="none" stroke={color.accent} strokeWidth={3.4} />);
