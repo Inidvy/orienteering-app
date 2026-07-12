@@ -6,6 +6,7 @@
 import { useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { StatusBar } from "expo-status-bar";
 import { RunSession, type CourseSpec } from "@orienteering/run-engine";
 import type { LeaderboardRun } from "@orienteering/verification-core";
@@ -66,9 +67,11 @@ type Screen = "onboarding" | "browse" | "run" | "finish" | "leaderboard";
 
 export default function App() {
   return (
-    <SafeAreaProvider>
-      <Shell />
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <Shell />
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
 

@@ -218,16 +218,15 @@ export function RunScreen({
         >
           <Text style={styles.backText}>‹</Text>
         </Pressable>
+        <Text style={styles.next}>
+          {preStart ? "" : `next control #${session.expectedShortCode ?? "—"}`}
+        </Text>
+        {/* timer top-right (long-press to abandon) */}
         <Pressable onLongPress={confirmAbandon} delayLongPress={800}>
           <Text style={styles.timer}>
-            {elapsed !== undefined ? fmt(elapsed) : "--:--"}
+            {elapsed !== undefined ? fmt(elapsed) : "0:00"}
           </Text>
         </Pressable>
-        <Text style={styles.next}>
-          {preStart
-            ? strings.preStart
-            : `next: #${session.expectedShortCode ?? "—"}`}
-        </Text>
       </View>
 
       {feedback && (
@@ -255,7 +254,9 @@ export function RunScreen({
                 ? strings.scanning
                 : flow.kind === "fallback"
                   ? strings.nfcReadFail
-                  : strings.punchButton(session.expectedShortCode ?? "—")}
+                  : preStart
+                    ? "TAP START FLAG TO BEGIN"
+                    : strings.punchButton(session.expectedShortCode ?? "—")}
             </Text>
           </Pressable>
         )}
@@ -284,7 +285,7 @@ const styles = StyleSheet.create({
   map: { flex: 1, backgroundColor: "#ffffff" },
   compass: {
     position: "absolute",
-    top: 12,
+    top: 110,
     right: 12,
     width: touch.run,
     height: touch.run,
@@ -296,7 +297,7 @@ const styles = StyleSheet.create({
   compassText: { color: color.onPanel, fontSize: t.body, fontWeight: "700" },
   compassGhost: {
     position: "absolute",
-    top: 12,
+    top: 110,
     right: 12,
     width: touch.default,
     height: touch.default,
@@ -311,7 +312,7 @@ const styles = StyleSheet.create({
     right: 0,
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "baseline",
+    alignItems: "center",
     backgroundColor: color.panel, // SOLID, never translucent over the map
     paddingHorizontal: 16,
     paddingVertical: 8,
