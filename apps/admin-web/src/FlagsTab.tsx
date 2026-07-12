@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { createFlag, listFlags } from "./api";
+import { createFlag, deleteFlag, listFlags } from "./api";
 import { Plate } from "./Plate";
 import { setupBaseMap } from "./mapBase";
 
@@ -24,7 +24,7 @@ export function FlagsTab() {
     for (const fl of f) {
       if (!fl.lat) continue;
       L.circleMarker([fl.lat, fl.lon], { radius: 8, color: "#d10f7c", fillOpacity: 0.6 })
-        .bindTooltip(fl.ufid)
+        .bindTooltip(fl.ufid, { permanent: true, direction: "top", className: "flabel" })
         .addTo(layer);
     }
   };
@@ -77,9 +77,14 @@ export function FlagsTab() {
           {flags.map((f) => (
             <li key={f.id}>
               <span><code>{f.ufid}</code></span>
-              <button className="chip" onClick={() => setPlate(f.ufid)}>
-                sticker
-              </button>
+              <span style={{ display: "flex", gap: 6 }}>
+                <button className="chip" onClick={() => setPlate(f.ufid)}>sticker</button>
+                <button className="chip danger" onClick={async () => {
+                  if (!confirm(`Delete flag ${f.ufid}?`)) return;
+                  try { await deleteFlag(f.id); await refresh(); }
+                  catch (e: any) { setMsg(e.message ?? "can't delete (flag has runs?)"); }
+                }}>delete</button>
+              </span>
             </li>
           ))}
         </ul>

@@ -39,22 +39,28 @@ export function CoursesTab() {
     // pins
     for (const f of flags) {
       if (!f.lat) continue;
-      const idx = order.indexOf(f.id);
+      // every position this flag occupies in the order (butterfly = multiple)
+      const positions = order
+        .map((id, i) => (id === f.id ? i + 1 : 0))
+        .filter(Boolean);
+      const used = positions.length > 0;
       const marker = L.circleMarker([f.lat, f.lon], {
-        radius: idx >= 0 ? 11 : 7,
+        radius: used ? 11 : 7,
         color: "#d10f7c",
-        fillColor: idx >= 0 ? "#d10f7c" : "#fff",
+        fillColor: used ? "#d10f7c" : "#fff",
         fillOpacity: 1,
         weight: 2,
       })
-        .bindTooltip(idx >= 0 ? `${idx + 1}. ${f.ufid}` : f.ufid, {
-          permanent: idx >= 0,
+        .bindTooltip(used ? `${positions.join(",")} · ${f.ufid}` : f.ufid, {
+          permanent: true,
           direction: "top",
+          className: "flabel",
         })
         .addTo(pins);
+      // APPEND on click — a flag may be added multiple times (butterfly loops,
+      // where a central control is visited more than once).
       marker.on("click", () => {
-        const o = orderRef.current;
-        orderRef.current = o.includes(f.id) ? o.filter((x) => x !== f.id) : [...o, f.id];
+        orderRef.current = [...orderRef.current, f.id];
         setOrder([...orderRef.current]);
         draw();
       });
@@ -106,14 +112,31 @@ export function CoursesTab() {
           onChange={(e) => setName(e.target.value)} />
         <p className="hint">
           Click flags on the map in run order: first = start, last = finish.
-          Click a flag again to remove it.
+          Click the same flag again to visit it twice (butterfly loops).
         </p>
         {order.length > 0 && (
-          <p className="coord">{order.map(ufidOf).join(" → ")}</p>
+          <div className="chips">
+            {order.map((id, i) => (
+              <button key={i} className="chip on" title="remove"
+                onClick={() => {
+                  orderRef.current = orderRef.current.filter((_, j) => j !== i);
+                  setOrder([...orderRef.current]);
+                  draw();
+                }}>
+                {i + 1}. {ufidOf(id)} ✕
+              </button>
+            ))}
+          </div>
         )}
-        <button onClick={save} disabled={order.length < 2 || !name.trim()}>
-          Create course
-        </button>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={save} disabled={order.length < 2 || !name.trim()}>
+            Create course
+          </button>
+          <button className="chip" disabled={!order.length}
+            onClick={() => { orderRef.current = []; setOrder([]); draw(); }}>
+            clear
+          </button>
+        </div>
         {msg && <p className="ok">{msg}</p>}
         <h3>Courses ({courses.length})</h3>
         <ul className="list">

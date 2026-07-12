@@ -47,6 +47,13 @@ nav button.on { background: var(--accent); color: #fff; }
 .chip { background: #eee; color: var(--ink); }
 .chip.on { background: var(--accent); color: #fff; }
 code { background: #f3f3f3; padding: 1px 5px; border-radius: 4px; }
+.chip.danger { background: #b91c1c; color: #fff; }
+/* permanent flag labels on the map */
+.flabel {
+  background: #141414; color: #fff; border: 0; font-weight: 700;
+  font-family: ui-monospace, monospace; padding: 1px 5px; border-radius: 5px;
+}
+.flabel::before { display: none; }
 
 .plateModal {
   position: fixed; inset: 0; background: rgba(0,0,0,0.5);

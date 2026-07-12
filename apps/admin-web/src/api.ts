@@ -34,6 +34,15 @@ export async function createFlag(
   return data as { id: string; ufid: string };
 }
 
+export async function deleteFlag(id: string): Promise<void> {
+  // remove admin references first (tags, course memberships), then the flag.
+  // Fails if the flag has recorded runs — you don't delete a flag people ran.
+  await supabase.from("course_flags").delete().eq("flag_id", id);
+  await supabase.from("tags").delete().eq("flag_id", id);
+  const { error } = await supabase.from("flags").delete().eq("id", id);
+  if (error) throw error;
+}
+
 export async function listCourses(): Promise<Course[]> {
   const { data, error } = await supabase
     .from("courses")
