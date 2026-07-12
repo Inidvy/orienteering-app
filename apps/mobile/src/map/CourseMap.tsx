@@ -40,9 +40,11 @@ export interface CourseMapProps {
   nextIndex?: number;
   width: number;
   height: number;
+  /** px from the top the compass should clear (below the top bar) */
+  topInset?: number;
 }
 
-export function CourseMap({ flags, nextIndex, width, height }: CourseMapProps) {
+export function CourseMap({ flags, nextIndex, width, height, topInset = 96 }: CourseMapProps) {
   const mapLayer = useMemo(() => {
     const feats = (area as any).features as {
       properties: { code: string };
@@ -85,38 +87,46 @@ export function CourseMap({ flags, nextIndex, width, height }: CourseMapProps) {
     if (pts.length >= 2) {
       const [sx, sy] = pts[0]!, [cx, cy] = pts[1]!;
       const ang = (Math.atan2(cy - sy, cx - sx) * 180) / Math.PI + 90;
-      const r = 12;
+      const r = 19;
       els.push(
         <Polygon key="start"
           points={`0,${-r} ${-r * 0.87},${r * 0.5} ${r * 0.87},${r * 0.5}`}
-          fill="none" stroke={color.accent} strokeWidth={2.4}
+          fill="none" stroke={color.accent} strokeWidth={3.4}
           transform={`translate(${sx} ${sy}) rotate(${ang})`} />,
       );
     }
     for (let i = 1; i < pts.length - 1; i++)
       els.push(
-        <Circle key={`ctrl${i}`} cx={pts[i]![0]} cy={pts[i]![1]} r={12}
-          fill="none" stroke={color.accent} strokeWidth={nextIndex === i ? 3.6 : 2.4} />,
+        <Circle key={`ctrl${i}`} cx={pts[i]![0]} cy={pts[i]![1]} r={18}
+          fill="none" stroke={color.accent} strokeWidth={nextIndex === i ? 5 : 3.4} />,
       );
     if (pts.length > 1) {
       const [fx, fy] = pts[pts.length - 1]!;
-      els.push(<Circle key="f1" cx={fx} cy={fy} r={9} fill="none" stroke={color.accent} strokeWidth={2.4} />);
-      els.push(<Circle key="f2" cx={fx} cy={fy} r={14} fill="none" stroke={color.accent} strokeWidth={2.4} />);
+      els.push(<Circle key="f1" cx={fx} cy={fy} r={15} fill="none" stroke={color.accent} strokeWidth={3.4} />);
+      els.push(<Circle key="f2" cx={fx} cy={fy} r={22} fill="none" stroke={color.accent} strokeWidth={3.4} />);
     }
     return els;
   }, [pts, nextIndex]);
 
-  // fit the course into the Svg viewBox (course-space metres)
-  const vb = useMemo(() => {
+  // The rendered Svg is a big square (2.2x the screen) centred on the screen,
+  // so rotation/zoom pivot on the screen centre and there is map content to
+  // reveal when rotating (no clipped white edges). viewBox is chosen so the
+  // course fits the screen at scale 1.
+  const layout = useMemo(() => {
     const xs = pts.map((p) => p[0]), ys = pts.map((p) => p[1]);
     const cx = (Math.min(...xs) + Math.max(...xs)) / 2;
     const cy = (Math.min(...ys) + Math.max(...ys)) / 2;
     const spanX = Math.max(...xs) - Math.min(...xs) + 160;
     const spanY = Math.max(...ys) - Math.min(...ys) + 160;
-    const ar = width / height;
-    let w = spanX, h = spanY;
-    if (w / h > ar) h = w / ar; else w = h * ar;
-    return { minX: cx - w / 2, minY: cy - h / 2, w, h };
+    const S = 2.2 * Math.max(width, height);
+    // visible screen shows (width/S)*G x (height/S)*G metres -> fit the course
+    const G = Math.max((spanX * S) / width, (spanY * S) / height);
+    return {
+      S,
+      left: (width - S) / 2,
+      top: (height - S) / 2,
+      viewBox: `${cx - G / 2} ${cy - G / 2} ${G} ${G}`,
+    };
   }, [pts, width, height]);
 
   // --- gesture-driven transforms on the native thread ---
@@ -196,20 +206,21 @@ export function CourseMap({ flags, nextIndex, width, height }: CourseMapProps) {
                 simultaneousHandlers={[panRef, pinchRef]}
               >
                 <Animated.View
-                  style={[
-                    StyleSheet.absoluteFill,
-                    {
-                      transform: [
-                        { translateX: pan.x },
-                        { translateY: pan.y },
-                        { rotate: rotateDeg },
-                        { scale },
-                      ],
-                    },
-                  ]}
+                  style={{
+                    position: "absolute",
+                    left: layout.left,
+                    top: layout.top,
+                    width: layout.S,
+                    height: layout.S,
+                    transform: [
+                      { translateX: pan.x },
+                      { translateY: pan.y },
+                      { rotate: rotateDeg },
+                      { scale },
+                    ],
+                  }}
                 >
-                  <Svg width={width} height={height}
-                    viewBox={`${vb.minX} ${vb.minY} ${vb.w} ${vb.h}`}>
+                  <Svg width={layout.S} height={layout.S} viewBox={layout.viewBox}>
                     <G>
                       {mapLayer}
                       {overlay}
@@ -224,7 +235,7 @@ export function CourseMap({ flags, nextIndex, width, height }: CourseMapProps) {
 
       {/* mini compass — counter-rotates to keep pointing north */}
       <Animated.View
-        style={[styles.compass, { transform: [{ rotate: counterRotate }] }]}
+        style={[styles.compass, { top: topInset }, { transform: [{ rotate: counterRotate }] }]}
         pointerEvents="none"
       >
         <Text style={styles.compassN}>N</Text>
@@ -237,7 +248,6 @@ export function CourseMap({ flags, nextIndex, width, height }: CourseMapProps) {
 const styles = StyleSheet.create({
   compass: {
     position: "absolute",
-    top: 96,
     right: 14,
     width: 46,
     height: 46,

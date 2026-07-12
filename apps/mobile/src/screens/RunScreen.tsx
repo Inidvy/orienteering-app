@@ -68,8 +68,17 @@ export function RunScreen({
   const [elapsed, setElapsed] = useState<number | undefined>();
   const [feedback, setFeedback] = useState<string | null>(null);
   const [showFallback, setShowFallback] = useState(false);
+  const [showDesc, setShowDesc] = useState(false);
   const flowRef = useRef(flow);
   flowRef.current = flow;
+
+  // control descriptions (Postenbeschreibung): Start / 1 / 2 / … / Finish + code
+  const descriptions = session.course.flagOrder.map((fid, i, arr) => {
+    const label =
+      i === 0 ? "Start" : i === arr.length - 1 ? "Finish" : `Control ${i}`;
+    const code = session.course.ufids?.[fid] ?? session.course.shortCodes[fid] ?? "?";
+    return { label, code, symbol: i === 0 ? "△" : i === arr.length - 1 ? "◎" : `${i}` };
+  });
 
   // resolve a scanned/typed token (UFID letters OR printed number) -> flagId
   const flagByToken = (token: string): string | undefined => {
@@ -197,6 +206,7 @@ export function RunScreen({
           flags={session.course.flagOrder.map((f) => session.course.flagPositions[f]!)}
           width={screenW}
           height={screenH}
+          topInset={insets.top + 60}
         />
         {/* the rotating compass lives inside CourseMap */}
       </View>
@@ -220,6 +230,28 @@ export function RunScreen({
           </Text>
         </Pressable>
       </View>
+
+      {/* control descriptions toggle (Postenbeschreibung), top-left below bar */}
+      <Pressable
+        style={[styles.descBtn, { top: insets.top + 60 }]}
+        onPress={() => setShowDesc((s) => !s)}
+        accessibilityLabel="control descriptions"
+      >
+        <Text style={styles.descBtnText}>≣</Text>
+      </Pressable>
+
+      {showDesc && (
+        <View style={[styles.descPanel, { top: insets.top + 60 }]}>
+          <Text style={styles.descTitle}>Controls</Text>
+          {descriptions.map((d, i) => (
+            <View key={i} style={styles.descRow}>
+              <Text style={styles.descSym}>{d.symbol}</Text>
+              <Text style={styles.descLabel}>{d.label}</Text>
+              <Text style={styles.descCode}>{d.code}</Text>
+            </View>
+          ))}
+        </View>
+      )}
 
       {feedback && (
         <View style={styles.sheet}>
@@ -323,6 +355,49 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   backText: { color: color.onPanel, fontSize: 32, fontWeight: "700" },
+  descBtn: {
+    position: "absolute",
+    left: 14,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: "rgba(20,20,20,0.85)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  descBtnText: { color: color.onPanel, fontSize: 22, fontWeight: "700" },
+  descPanel: {
+    position: "absolute",
+    left: 14,
+    marginTop: 54,
+    backgroundColor: color.panel,
+    borderRadius: 12,
+    padding: 12,
+    minWidth: 190,
+  },
+  descTitle: {
+    color: color.onPanel,
+    fontSize: t.min,
+    fontWeight: "700",
+    marginBottom: 6,
+    textTransform: "uppercase",
+  },
+  descRow: { flexDirection: "row", alignItems: "center", paddingVertical: 4, gap: 10 },
+  descSym: {
+    color: color.accent,
+    fontSize: t.body,
+    fontWeight: "800",
+    width: 24,
+    textAlign: "center",
+  },
+  descLabel: { color: color.onPanel, fontSize: t.body, flex: 1 },
+  descCode: {
+    color: color.onPanel,
+    fontSize: t.body,
+    fontWeight: "700",
+    fontFamily: "monospace",
+    letterSpacing: 1,
+  },
   punchRow: { flexDirection: "row", backgroundColor: color.panel },
   qrBtn: {
     width: touch.punchButton + 16,
