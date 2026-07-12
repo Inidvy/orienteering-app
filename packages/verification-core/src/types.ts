@@ -6,9 +6,12 @@
  * Trust ladder (worst wins):
  *   unverified < partial < verified
  *
- *   verified   — both bounding punches NFC, track covers the leg, all checks pass
- *   partial    — QR/manual punch, track gap, or lost clock basis
+ *   verified   — both bounding punches NFC or QR, track covers the leg, all checks pass
+ *   partial    — manual punch, track gap, or lost clock basis
  *   unverified — missing punch, or proximity/speed check failure (spoof-shaped)
+ *
+ * QR = NFC since 2026-07-12 (user decision; the 10 m/1 Hz proximity check
+ * carries the presence proof).
  */
 
 export type PunchMethod = "nfc" | "qr" | "manual";
@@ -52,9 +55,12 @@ export interface TuningConfig {
   punchTrackToleranceS: number;
 }
 
+// Mirrors the CURRENT tuning_configs row (v2, migration 0011) so the app's
+// provisional statuses agree with the server. 10 m proximity is the user's
+// strict-verification decision (2026-07-12); recording runs at 1 Hz to match.
 export const DEFAULT_TUNING: TuningConfig = {
-  version: 1,
-  proximityToleranceM: 35,
+  version: 2,
+  proximityToleranceM: 10,
   speedCeilingMps: 8,
   maxTrackGapS: 30,
   speedWindowS: 10,
@@ -92,7 +98,7 @@ export interface RunResult {
 
 export type Gender = "M" | "W";
 
-export type AgeBand = "U14" | "U18" | "open" | "O40" | "O60";
+export type AgeBand = "U14" | "U18" | "Elite" | "O40" | "O60";
 
-/** e.g. "M-open", "W-U18" */
+/** e.g. "M-Elite", "W-U18" */
 export type CompetitionClass = `${Gender}-${AgeBand}`;

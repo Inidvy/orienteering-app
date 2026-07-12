@@ -27,7 +27,7 @@ import {
   type RunSession,
 } from "@orienteering/run-engine";
 import type { PunchProvider } from "../nfc/PunchProvider";
-import { color, touch, type as t } from "../theme";
+import { color, font, touch, type as t } from "../theme";
 import { strings } from "../strings";
 
 function fmt(ms: number): string {
@@ -48,6 +48,8 @@ export interface RunScreenProps {
   /** registry cache: chip UID -> flagId */
   resolveTag: (tagUid: string) => string | undefined;
   monotonicNow: () => number;
+  /** settings preference: the punch button opens the QR camera directly */
+  preferQr?: boolean;
   onFinished: () => void;
   onAbandoned: () => void;
   /** back out before the run has started (pre-start only) */
@@ -59,6 +61,7 @@ export function RunScreen({
   punchProvider,
   resolveTag,
   monotonicNow,
+  preferQr = false,
   onFinished,
   onAbandoned,
   onExit,
@@ -95,16 +98,23 @@ export function RunScreen({
     return () => clearInterval(id);
   }, [session, monotonicNow]);
 
-  // record the GPS track for the whole run (foreground). Screen-off/background
-  // tracking needs a dev build; in Expo Go it records while the app is open.
+  // GPS (foreground; screen-off tracking needs a dev build). 1 Hz, no
+  // distance gate (user decision 2026-07-12): the 10 m punch proximity check
+  // needs a sample near the flag every second. The watcher starts immediately
+  // so the fix is warm, but the TRACK only records from the start punch on
+  // (user decision 2026-07-12): no pre-start wandering on the route, and the
+  // start flag still gets samples inside the ±60 s punch window.
   useEffect(() => {
     let sub: Location.LocationSubscription | undefined;
     (async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") return;
       sub = await Location.watchPositionAsync(
-        { accuracy: Location.Accuracy.BestForNavigation, distanceInterval: 3, timeInterval: 2000 },
-        (loc) => session.gps(loc.coords.latitude, loc.coords.longitude, monotonicNow()),
+        { accuracy: Location.Accuracy.BestForNavigation, distanceInterval: 0, timeInterval: 1000 },
+        (loc) => {
+          if (session.phase === "pre-start") return;
+          session.gps(loc.coords.latitude, loc.coords.longitude, monotonicNow());
+        },
       );
     })();
     return () => sub?.remove();
@@ -214,10 +224,14 @@ export function RunScreen({
   return (
     <View style={styles.root}>
       {/* Georeferenced O-map backdrop + course overlay. Deliberately NO live
-          position dot, ever (P7-D12). */}
+          position dot, ever (P7-D12). Pre-start only the START flag is drawn
+          (fair start, user decision 2026-07-12) — the course appears at the
+          start punch, like getting the map at the start signal. */}
       <View style={styles.map}>
         <CourseMap
-          flags={session.course.flagOrder.map((f) => session.course.flagPositions[f]!)}
+          flags={session.course.flagOrder
+            .map((f) => session.course.flagPositions[f]!)
+            .slice(0, preStart ? 1 : undefined)}
           width={screenW}
           height={screenH}
           topInset={insets.top + 60}
@@ -245,9 +259,10 @@ export function RunScreen({
         </Pressable>
       </View>
 
-      {/* control descriptions toggle (Postenbeschreibung), top-left below bar */}
+      {/* control descriptions toggle (Postenbeschreibung), left side at the
+          compass height (user request 2026-07-12: further down, clear of the bar) */}
       <Pressable
-        style={[styles.descBtn, { top: insets.top + 60 }]}
+        style={[styles.descBtn, { top: insets.top + 120 }]}
         onPress={() => setShowDesc((s) => !s)}
         accessibilityLabel="control descriptions"
       >
@@ -255,7 +270,7 @@ export function RunScreen({
       </Pressable>
 
       {showDesc && (
-        <View style={[styles.descPanel, { top: insets.top + 60 }]}>
+        <View style={[styles.descPanel, { top: insets.top + 120 }]}>
           {descriptions.map((d, i) => (
             <View key={i} style={styles.descRow}>
               <Text style={styles.descSym}>{d.symbol}</Text>
@@ -280,8 +295,10 @@ export function RunScreen({
               flow.kind === "scanning" && styles.punchScanning,
             ]}
             onPress={() => {
-              if (flow.kind === "idle" || flow.kind === "failed") void arm();
-              if (flow.kind === "fallback") setShowFallback(true);
+              // QR preference (settings): the punch button goes straight to
+              // the camera instead of arming an NFC scan
+              if (preferQr || flow.kind === "fallback") setShowFallback(true);
+              else if (flow.kind === "idle" || flow.kind === "failed") void arm();
             }}
             accessibilityRole="button"
           >
@@ -291,7 +308,7 @@ export function RunScreen({
                 : flow.kind === "fallback"
                   ? strings.nfcReadFail
                   : preStart
-                    ? "TAP START FLAG TO BEGIN"
+                    ? strings.preStart(session.expectedShortCode ?? "—")
                     : strings.punchButton(session.expectedShortCode ?? "—")}
             </Text>
           </Pressable>
@@ -356,10 +373,16 @@ const styles = StyleSheet.create({
   timer: {
     color: color.onPanel,
     fontSize: t.timer,
-    fontWeight: "700",
+    fontFamily: font.mono,
     fontVariant: ["tabular-nums"],
   },
-  next: { color: color.onPanel, fontSize: t.nextControl, fontWeight: "600" },
+  next: {
+    color: color.onPanel,
+    fontSize: t.min - 2,
+    fontFamily: font.mono,
+    letterSpacing: 1,
+    textTransform: "uppercase",
+  },
   back: {
     width: touch.default,
     height: touch.default,
@@ -406,8 +429,7 @@ const styles = StyleSheet.create({
   descCode: {
     color: color.onPanel,
     fontSize: t.body,
-    fontWeight: "700",
-    fontFamily: "monospace",
+    fontFamily: font.mono,
     letterSpacing: 1,
   },
   punchRow: { flexDirection: "row", backgroundColor: color.panel },
@@ -430,7 +452,7 @@ const styles = StyleSheet.create({
     backgroundColor: color.panel,
     padding: 16,
   },
-  sheetText: { color: color.onPanel, fontSize: t.body, fontWeight: "600" },
+  sheetText: { color: color.onPanel, fontSize: t.body, fontFamily: font.sansBold },
   punch: {
     flex: 1,
     minHeight: touch.punchButton,
@@ -439,5 +461,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   punchScanning: { backgroundColor: color.panel },
-  punchText: { color: color.onPanel, fontSize: t.nextControl, fontWeight: "700" },
+  punchText: {
+    color: color.onPanel,
+    fontSize: t.body,
+    fontFamily: font.mono,
+    letterSpacing: 1,
+    textTransform: "uppercase",
+  },
 });

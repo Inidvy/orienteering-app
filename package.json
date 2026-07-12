@@ -6,6 +6,8 @@
     "apps/*"
   ],
   "scripts": {
+    "start": "npm run start -w @orienteering/mobile",
+    "map:build": "node tools/map-pipeline/omap2geojson.mjs && node tools/map-pipeline/course-geojson.mjs && node tools/map-pipeline/render.mjs",
     "test": "npm run test -w @orienteering/verification-core && npm run test -w @orienteering/run-engine",
     "typecheck": "npm run typecheck -w @orienteering/verification-core && npm run typecheck -w @orienteering/run-engine && npm run typecheck -w @orienteering/mobile",
     "bundle:functions": "esbuild packages/verification-core/src/index.ts --bundle --format=esm --outfile=supabase/functions/_shared/verification-core.mjs"

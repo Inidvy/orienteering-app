@@ -5,7 +5,7 @@
 import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { createCourse, listCourses, listFlags } from "./api";
+import { createCourse, deleteCourse, listCourses, listFlags } from "./api";
 import { setupBaseMap } from "./mapBase";
 
 type Flag = Awaited<ReturnType<typeof listFlags>>[number];
@@ -103,6 +103,27 @@ export function CoursesTab() {
 
   const ufidOf = (id: string) => flagsRef.current.find((f) => f.id === id)?.ufid ?? "?";
 
+  const remove = async (c: Course) => {
+    const warning =
+      `⚠  Delete the course "${c.name}"?\n\n` +
+      `This permanently removes the course. It disappears from the app and ` +
+      `nobody can run it again. The flags themselves stay on the map.\n\n` +
+      `This cannot be undone.`;
+    if (!confirm(warning)) return;
+    setMsg("");
+    try {
+      await deleteCourse(c.id);
+      setCourses(await listCourses());
+      setMsg(`Deleted course "${c.name}".`);
+    } catch (e: any) {
+      setMsg(
+        e?.code === "23503" || /foreign key|violates/i.test(e?.message ?? "")
+          ? `Can't delete "${c.name}" — runs have already been recorded on it.`
+          : e?.message ?? "failed (are you an admin?)",
+      );
+    }
+  };
+
   return (
     <div className="tab">
       <div id="coursemap" className="map" />
@@ -140,7 +161,12 @@ export function CoursesTab() {
         {msg && <p className="ok">{msg}</p>}
         <h3>Courses ({courses.length})</h3>
         <ul className="list">
-          {courses.map((c) => <li key={c.id}>{c.name}</li>)}
+          {courses.map((c) => (
+            <li key={c.id}>
+              <span>{c.name}</span>
+              <button className="chip danger" onClick={() => remove(c)}>delete</button>
+            </li>
+          ))}
         </ul>
       </div>
     </div>

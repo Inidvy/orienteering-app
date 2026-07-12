@@ -25,7 +25,13 @@ describe("buildLeaderboard — ranking rules", () => {
   it("ranks best verified run per user, fastest first", () => {
     const board = buildLeaderboard([
       run({ userId: "a", displayName: "A", totalTimeMs: 40_000 }),
-      run({ userId: "a", displayName: "A", totalTimeMs: 38_000 }), // A's best
+      // A's best, 8 days later (outside the re-run cooldown)
+      run({
+        userId: "a",
+        displayName: "A",
+        totalTimeMs: 38_000,
+        completedAtMs: T2026 + 8 * 24 * 3600_000,
+      }),
       run({ userId: "b", displayName: "B", totalTimeMs: 39_000 }),
     ]);
     expect(board.ranked.map((e) => [e.rank, e.run.userId, e.run.totalTimeMs])).toEqual([
@@ -66,10 +72,10 @@ describe("buildLeaderboard — ranking rules", () => {
   });
 });
 
-describe("buildLeaderboard — class chips (P7-D13-A)", () => {
+describe("buildLeaderboard — class chips (P7-D13-A, per-gender classes)", () => {
   const mixed = [
-    run({ userId: "m-open", gender: "M", birthYear: 1995, totalTimeMs: 1 }),
-    run({ userId: "w-open", gender: "W", birthYear: 1995, totalTimeMs: 2 }),
+    run({ userId: "m-elite", gender: "M", birthYear: 1995, totalTimeMs: 1 }),
+    run({ userId: "w-elite", gender: "W", birthYear: 1995, totalTimeMs: 2 }),
     run({ userId: "m-o40", gender: "M", birthYear: 1980, totalTimeMs: 3 }),
     run({ userId: "w-u18", gender: "W", birthYear: 2010, totalTimeMs: 4 }),
   ];
@@ -81,16 +87,67 @@ describe("buildLeaderboard — class chips (P7-D13-A)", () => {
   it("gender chips filter by gender across ages", () => {
     expect(
       buildLeaderboard(mixed, "W").ranked.map((e) => e.run.userId),
-    ).toEqual(["w-open", "w-u18"]);
+    ).toEqual(["w-elite", "w-u18"]);
   });
 
-  it("age-band chips filter by class at run date", () => {
+  it("class chips are gender-specific — Elite splits into M and W", () => {
     expect(
-      buildLeaderboard(mixed, "O40").ranked.map((e) => e.run.userId),
+      buildLeaderboard(mixed, "M-Elite").ranked.map((e) => e.run.userId),
+    ).toEqual(["m-elite"]);
+    expect(
+      buildLeaderboard(mixed, "W-Elite").ranked.map((e) => e.run.userId),
+    ).toEqual(["w-elite"]);
+  });
+
+  it("age classes are gender-specific too", () => {
+    expect(
+      buildLeaderboard(mixed, "M-O40").ranked.map((e) => e.run.userId),
     ).toEqual(["m-o40"]);
     expect(
-      buildLeaderboard(mixed, "U18").ranked.map((e) => e.run.userId),
+      buildLeaderboard(mixed, "W-U18").ranked.map((e) => e.run.userId),
     ).toEqual(["w-u18"]);
+    expect(buildLeaderboard(mixed, "W-O40").ranked).toHaveLength(0);
+  });
+});
+
+describe("buildLeaderboard — re-run cooldown (user decision 2026-07-12)", () => {
+  const DAY = 24 * 3600_000;
+
+  it("a re-run within 7 days stays unranked; the first run keeps its rank", () => {
+    const board = buildLeaderboard([
+      run({ runId: "r1", userId: "a", totalTimeMs: 40_000, completedAtMs: T2026 }),
+      // faster, but only 3 days later — fresh route knowledge, not ranked
+      run({ runId: "r2", userId: "a", totalTimeMs: 30_000, completedAtMs: T2026 + 3 * DAY }),
+    ]);
+    expect(board.ranked).toHaveLength(1);
+    expect(board.ranked[0]!.run.runId).toBe("r1");
+  });
+
+  it("a re-run 7+ days later is ranked (best of both counts)", () => {
+    const board = buildLeaderboard([
+      run({ runId: "r1", userId: "a", totalTimeMs: 40_000, completedAtMs: T2026 }),
+      run({ runId: "r2", userId: "a", totalTimeMs: 30_000, completedAtMs: T2026 + 8 * DAY }),
+    ]);
+    expect(board.ranked).toHaveLength(1);
+    expect(board.ranked[0]!.run.runId).toBe("r2");
+  });
+
+  it("cooldown counts from the last ELIGIBLE run, not from ineligible re-runs", () => {
+    const board = buildLeaderboard([
+      run({ runId: "r1", userId: "a", totalTimeMs: 40_000, completedAtMs: T2026 }),
+      run({ runId: "r2", userId: "a", totalTimeMs: 20_000, completedAtMs: T2026 + 6 * DAY }), // ineligible
+      run({ runId: "r3", userId: "a", totalTimeMs: 30_000, completedAtMs: T2026 + 9 * DAY }), // 9d after r1 -> eligible
+    ]);
+    expect(board.ranked[0]!.run.runId).toBe("r3");
+  });
+
+  it("other runners are unaffected by someone's cooldown", () => {
+    const board = buildLeaderboard([
+      run({ runId: "a1", userId: "a", totalTimeMs: 40_000, completedAtMs: T2026 }),
+      run({ runId: "a2", userId: "a", totalTimeMs: 10_000, completedAtMs: T2026 + DAY }),
+      run({ runId: "b1", userId: "b", totalTimeMs: 35_000, completedAtMs: T2026 + DAY }),
+    ]);
+    expect(board.ranked.map((e) => e.run.runId)).toEqual(["b1", "a1"]);
   });
 });
 

@@ -67,8 +67,10 @@ function ptsOf(coords) {
 }
 
 const parts = [];
-// paint order: areas (veg/paved) first, then water, then lines/buildings
+// paint order: embedded z from the .omap color table when present (exactly
+// Mapper's bottom-up color order, 2026-07-12); code-heuristic fallback else
 const order = (f) => {
+  if (f.properties.z != null) return f.properties.z;
   const c = f.properties.code;
   if (c[0] === "4") return 0;
   if (c.startsWith("520") || c.startsWith("501.7") || c.startsWith("501.8")) return 1;
@@ -83,8 +85,15 @@ const anyIn = (c) =>
 const kept = fc.features.filter((f) => anyIn(f.geometry.coordinates));
 const sorted = kept.sort((a, b) => order(a) - order(b));
 
+// ground metres -> pixels, for line widths coming from the symbol table
+const mPerPx = groundW / PW;
+
 for (const f of sorted) {
-  const st = styleFor(f.properties.code);
+  const p = f.properties;
+  const st =
+    p.c != null || p.s != null
+      ? { fill: p.c, stroke: p.s, w: Math.max(0.6, (p.w ?? 0) / mPerPx) }
+      : styleFor(f.properties.code);
   const g = f.geometry;
   if (g.type === "Polygon") {
     const pts = ptsOf(g.coordinates[0]);
@@ -116,6 +125,12 @@ const svg =
 await sharp(Buffer.from(svg)).png().toFile(OUT_PNG);
 const bounds = { north: N, south: S, west: W, east: E, width: PW, height: PH };
 fs.writeFileSync(OUT_BOUNDS, JSON.stringify(bounds, null, 2) + "\n");
+// admin-web imports the bounds from src (2026-07-12) — previously hardcoded
+// in mapBase.ts, which silently kept the OLD extent after a base-map swap
+fs.writeFileSync(
+  path.join(dir, "..", "..", "apps", "admin-web", "src", "omap-bounds.json"),
+  JSON.stringify(bounds, null, 2) + "\n",
+);
 console.log(`rendered ${PW}x${PH}px, ${sorted.length} features`);
 console.log(`ground ~${groundW.toFixed(0)} x ${groundH.toFixed(0)} m`);
 console.log(`bounds`, bounds);

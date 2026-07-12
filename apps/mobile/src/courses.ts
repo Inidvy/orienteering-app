@@ -1,6 +1,7 @@
 // Load real courses + flags from the live database (created in the admin).
 // This is what makes admin courses show up in the app.
 import { supabase } from "./supabase";
+import { distanceM } from "@orienteering/verification-core";
 import type { CourseSpec } from "@orienteering/run-engine";
 import type { CoursePin } from "./screens/CourseMapPicker";
 
@@ -63,10 +64,15 @@ export async function loadCoursePins(): Promise<CoursePin[]> {
       ufids,
     };
     const startId = order[0]!;
+    // course length is GENERATED from the flag geometry (sum of straight-line
+    // legs, the orienteering convention) — the stored length_m is ignored
+    const lengthM = order
+      .slice(1)
+      .reduce((sum, id, i) => sum + distanceM(flagPositions[order[i]!]!, flagPositions[id]!), 0);
     pins.push({
       spec,
       name: (c as any).name,
-      lengthM: (c as any).length_m ?? 0,
+      lengthM: Math.round(lengthM),
       difficulty: "Medium",
       start: flagPositions[startId]!,
     });

@@ -1,10 +1,30 @@
-// ISOM/ISSprOM-ish styling by symbol code, shared by the vector renderer.
+// Feature styling for the vector renderer. Preferred source: per-feature
+// style EMBEDDED by the pipeline from the .omap's own color/symbol tables
+// (exactly what OpenOrienteering Mapper renders — 2026-07-12); styleFor() is
+// the code-prefix fallback for assets built before that.
 export interface FeatureStyle {
   fill: string | null;
   stroke: string | null;
   /** stroke width in METRES (scales with zoom, like a real map) */
   w: number;
   z: number; // paint order (low first)
+}
+
+export interface FeatureProps {
+  code: string;
+  /** fill color from the map's color table */
+  c?: string | null;
+  /** stroke color from the map's color table */
+  s?: string | null;
+  w?: number;
+  z?: number;
+}
+
+export function styleOf(p: FeatureProps): FeatureStyle {
+  if (p.c != null || p.s != null) {
+    return { fill: p.c ?? null, stroke: p.s ?? null, w: p.w ?? 0, z: p.z ?? 0 };
+  }
+  return styleFor(p.code);
 }
 
 export function styleFor(code: string): FeatureStyle {

@@ -12,7 +12,7 @@ import {
   type ClassChip,
   type LeaderboardRun,
 } from "@orienteering/verification-core";
-import { color, touch, type as t } from "../theme";
+import { color, font, touch, type as t } from "../theme";
 import { strings } from "../strings";
 
 function fmt(ms: number): string {
@@ -49,7 +49,7 @@ export function LeaderboardScreen({
             onPress={() => setChip(c)}
           >
             <Text style={[styles.chipText, chip === c && styles.chipTextActive]}>
-              {c === "overall" ? "Overall" : c}
+              {c === "overall" ? "Overall" : c.replace("-", " ")}
             </Text>
           </Pressable>
         ))}
@@ -124,8 +124,8 @@ const styles = StyleSheet.create({
     alignItems: "baseline",
     padding: 16,
   },
-  title: { fontSize: t.nextControl, fontWeight: "700", color: color.onSurface },
-  count: { fontSize: t.min, color: color.muted },
+  title: { fontSize: t.nextControl, fontFamily: font.display, color: color.onSurface },
+  count: { fontSize: t.min - 2, color: color.muted, fontFamily: font.mono, textTransform: "uppercase" },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 8, paddingHorizontal: 16 },
   chip: {
     minHeight: touch.default,
@@ -137,8 +137,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   chipActive: { backgroundColor: color.accent, borderColor: color.accent },
-  chipText: { fontSize: t.min, color: color.onSurface },
-  chipTextActive: { color: color.onPanel, fontWeight: "700" },
+  chipText: { fontSize: t.min - 3, color: color.onSurface, fontFamily: font.mono, textTransform: "uppercase" },
+  chipTextActive: { color: color.onPanel },
   empty: { flex: 1, alignItems: "center", justifyContent: "center", padding: 32 },
   emptyText: { fontSize: t.body, color: color.muted, textAlign: "center" },
   row: {
@@ -148,8 +148,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     minHeight: touch.default,
   },
-  youRow: { backgroundColor: "#fdeef7" },
-  youText: { fontWeight: "700" },
+  youRow: { backgroundColor: "#ffe6f4" },
+  youText: { fontFamily: font.sansBold },
   pinned: {
     position: "absolute",
     bottom: 0,
@@ -158,16 +158,17 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: color.accent,
   },
-  rank: { width: 28, fontSize: t.body, color: color.onSurface, fontWeight: "600" },
-  name: { flex: 1, fontSize: t.body, color: color.onSurface },
-  nameMuted: { flex: 1, fontSize: t.body, color: color.muted },
+  rank: { width: 28, fontSize: t.body, color: color.accent, fontFamily: font.mono },
+  name: { flex: 1, fontSize: t.body, color: color.onSurface, fontFamily: font.sans },
+  nameMuted: { flex: 1, fontSize: t.body, color: color.muted, fontFamily: font.sans },
   time: {
     fontSize: t.body,
     color: color.onSurface,
+    fontFamily: font.mono,
     fontVariant: ["tabular-nums"],
   },
-  timeMuted: { fontSize: t.body, color: color.muted, fontVariant: ["tabular-nums"] },
-  badge: { fontSize: t.body, color: color.verified, fontWeight: "700" },
+  timeMuted: { fontSize: t.body, color: color.muted, fontFamily: font.mono, fontVariant: ["tabular-nums"] },
+  badge: { fontSize: t.min, color: color.verified, fontFamily: font.sansBold },
   badgeMuted: { fontSize: t.min - 2, color: color.muted },
   unrankedBlock: { marginTop: 12, paddingBottom: 80 },
   unrankedHeader: {

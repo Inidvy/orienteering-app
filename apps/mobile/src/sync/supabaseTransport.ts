@@ -2,6 +2,8 @@
 // @orienteering/run-engine. No logic here beyond row mapping — RLS lets the
 // client insert raw payloads into its own rows only (write-authority 1A);
 // statuses come back from the sync-run edge function, never from here.
+// Re-sends use ON CONFLICT DO NOTHING (ignoreDuplicates): clients hold no
+// UPDATE grants, so an upsert's DO UPDATE path would be denied by RLS.
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
@@ -22,15 +24,19 @@ function trackToWkt(track: TrackPoint[]): string {
 export function supabaseTransport(db: SupabaseClient): SyncTransport {
   return {
     async upsertRun(run: SyncPayload["run"], preRunAnchorIso?: string) {
+      // RLS insert_own_runs requires runner = auth.uid(); the column is NOT NULL
+      const { data: auth } = await db.auth.getUser();
+      if (!auth.user) throw new Error("not signed in");
       const { error } = await db.from("runs").upsert(
         {
           id: run.id,
+          runner: auth.user.id,
           course_id: run.courseId,
           clock_basis_lost: run.clockBasisLost,
           dnf: run.dnf,
           pre_run_anchor: preRunAnchorIso ?? null,
         },
-        { onConflict: "id" },
+        { onConflict: "id", ignoreDuplicates: true },
       );
       if (error) throw error;
     },
@@ -45,7 +51,7 @@ export function supabaseTransport(db: SupabaseClient): SyncTransport {
           method: p.method,
           t_monotonic_ms: p.tMonotonicMs,
         })),
-        { onConflict: "id" },
+        { onConflict: "id", ignoreDuplicates: true },
       );
       if (error) throw error;
     },
@@ -53,7 +59,10 @@ export function supabaseTransport(db: SupabaseClient): SyncTransport {
     async upsertTrack(runId: string, track: TrackPoint[]) {
       const { error } = await db
         .from("tracks")
-        .upsert({ run_id: runId, geom: trackToWkt(track) }, { onConflict: "run_id" });
+        .upsert(
+          { run_id: runId, geom: trackToWkt(track) },
+          { onConflict: "run_id", ignoreDuplicates: true },
+        );
       if (error) throw error;
     },
 

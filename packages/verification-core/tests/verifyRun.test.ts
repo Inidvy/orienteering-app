@@ -103,12 +103,24 @@ describe("verifyRun — full pipeline", () => {
     expect(out.legs[0]!.reasons).toContain("missing_end_punch");
   });
 
-  it("QR punch on one control drags the run to partial", () => {
+  it("QR punch is as valid as NFC — run stays verified (user decision 2026-07-12)", () => {
     const input = healthyRun();
     input.punches[1] = {
       uuid: "p2",
       flagId: "C1",
       method: "qr",
+      tMonotonicMs: 60_000,
+    };
+    const out = verifyRun(input);
+    expect(out.status).toBe("verified");
+  });
+
+  it("manual punch on one control drags the run to partial", () => {
+    const input = healthyRun();
+    input.punches[1] = {
+      uuid: "p2",
+      flagId: "C1",
+      method: "manual",
       tMonotonicMs: 60_000,
     };
     const out = verifyRun(input);

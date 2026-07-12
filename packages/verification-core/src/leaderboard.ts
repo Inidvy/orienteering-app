@@ -6,8 +6,9 @@ import type { CompetitionClass, Gender, TrustStatus } from "./types";
  *  - RANKS each user's best verified run only; ties broken by earlier completion
  *  - partial/unverified runs appear BELOW the ranked list, visibly unranked
  *    (the trust story made visible)
- *  - class chips (P7-D13-A): Overall · M · W · U14 · U18 · O40 · O60 —
- *    a class view is the same data filtered by the runner's class at run date
+ *  - class chips (P7-D13-A, revised 2026-07-12): Overall · M · W plus every
+ *    class SEPARATELY per gender (M-Elite, W-Elite, M-U14, W-U14, …) — a class
+ *    view is the same data filtered by the runner's class at run date
  *  - DNF runs never reach a leaderboard (filtered before this module)
  */
 
@@ -23,23 +24,22 @@ export interface LeaderboardRun {
   completedAtMs: number;
 }
 
-export type ClassChip =
-  | "overall"
-  | "M"
-  | "W"
-  | "U14"
-  | "U18"
-  | "O40"
-  | "O60";
+export type ClassChip = "overall" | Gender | CompetitionClass;
 
 export const CLASS_CHIPS: ClassChip[] = [
   "overall",
   "M",
   "W",
-  "U14",
-  "U18",
-  "O40",
-  "O60",
+  "M-Elite",
+  "W-Elite",
+  "M-U14",
+  "W-U14",
+  "M-U18",
+  "W-U18",
+  "M-O40",
+  "W-O40",
+  "M-O60",
+  "W-O60",
 ];
 
 export interface RankedEntry {
@@ -61,7 +61,41 @@ function matchesChip(run: LeaderboardRun, chip: ClassChip): boolean {
     new Date(run.completedAtMs),
   );
   if (chip === "M" || chip === "W") return cls.startsWith(`${chip}-`);
-  return cls.endsWith(`-${chip}`);
+  return cls === chip; // per-gender class chip, e.g. "W-Elite"
+}
+
+/**
+ * Re-running a course within this window keeps the new run UNRANKED (user
+ * decision 2026-07-12): route knowledge is fresh, so an immediate repeat
+ * would be an unfair time. The run itself is stored and shows in history.
+ */
+export const RERUN_COOLDOWN_MS = 7 * 24 * 3600_000;
+
+/**
+ * Per user, chronologically: a run is rank-eligible only when 7+ days have
+ * passed since that user's last ELIGIBLE run on this course (ineligible
+ * re-runs don't reset the clock). Counts runs of any status — the cooldown
+ * is about repeat attempts, not about verification.
+ */
+function rankEligible(runs: LeaderboardRun[]): Set<string> {
+  const byUser = new Map<string, LeaderboardRun[]>();
+  for (const r of runs) {
+    const list = byUser.get(r.userId) ?? [];
+    list.push(r);
+    byUser.set(r.userId, list);
+  }
+  const eligible = new Set<string>();
+  for (const list of byUser.values()) {
+    list.sort((a, b) => a.completedAtMs - b.completedAtMs);
+    let lastEligibleMs = -Infinity;
+    for (const r of list) {
+      if (r.completedAtMs - lastEligibleMs >= RERUN_COOLDOWN_MS) {
+        eligible.add(r.runId);
+        lastEligibleMs = r.completedAtMs;
+      }
+    }
+  }
+  return eligible;
 }
 
 function bestPerUser(runs: LeaderboardRun[]): LeaderboardRun[] {
@@ -84,8 +118,13 @@ export function buildLeaderboard(
   chip: ClassChip = "overall",
 ): Leaderboard {
   const inClass = runs.filter((r) => matchesChip(r, chip));
+  // cooldown is computed over ALL the user's runs (any status), then ranking
+  // takes verified + eligible ones
+  const eligible = rankEligible(inClass);
 
-  const ranked = bestPerUser(inClass.filter((r) => r.status === "verified"))
+  const ranked = bestPerUser(
+    inClass.filter((r) => r.status === "verified" && eligible.has(r.runId)),
+  )
     .sort(
       (a, b) =>
         a.totalTimeMs - b.totalTimeMs || a.completedAtMs - b.completedAtMs,

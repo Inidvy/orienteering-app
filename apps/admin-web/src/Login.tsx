@@ -20,7 +20,8 @@ export function Login() {
 
   return (
     <div className="login">
-      <h1>OL-KA admin</h1>
+      <h1>OL·KA admin</h1>
+      <p className="hint">Sign in to manage flags, courses and reports.</p>
       <input placeholder="username" autoCapitalize="none" value={user}
         onChange={(e) => setUser(e.target.value)} />
       <input placeholder="password" type="password" value={pw}

@@ -5,7 +5,7 @@ import type { AgeBand, CompetitionClass, Gender } from "./types";
  *
  *   age <14 ──▶ U14
  *   age <18 ──▶ U18
- *   age <40 ──▶ open
+ *   age <40 ──▶ Elite   (the open adult class, orienteering's 21E)
  *   age <60 ──▶ O40
  *   else    ──▶ O60
  *
@@ -16,7 +16,7 @@ export function ageBand(birthYear: number, runDate: Date): AgeBand {
   const age = runDate.getUTCFullYear() - birthYear;
   if (age < 14) return "U14";
   if (age < 18) return "U18";
-  if (age < 40) return "open";
+  if (age < 40) return "Elite";
   if (age < 60) return "O40";
   return "O60";
 }

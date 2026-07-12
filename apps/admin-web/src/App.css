@@ -1,69 +1,243 @@
-:root { --accent: #d10f7c; --ink: #141414; --muted: #6b7280; }
-* { box-sizing: border-box; }
-body { margin: 0; font-family: system-ui, sans-serif; color: var(--ink); }
-
-.login {
-  max-width: 360px; margin: 12vh auto; padding: 24px; display: flex;
-  flex-direction: column; gap: 12px; text-align: center;
+/* OL·KA admin — visual identity shared with the landing page and app:
+   ISOM course magenta + control-flag orange, Archivo display, IBM Plex Sans
+   body, IBM Plex Mono for every code / coordinate / count. */
+:root {
+  --accent: #e6007e; /* ISOM course-overprint magenta */
+  --orange: #ff7f2a; /* control-flag orange */
+  --ink: #16130f;
+  --muted: #6b7280;
+  --hair: #ece8e1;
+  --surface: #ffffff;
+  --paper: #faf8f4;
+  --display: "Archivo", system-ui, sans-serif;
+  --sans: "IBM Plex Sans", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, monospace;
 }
-.login h1 { color: var(--accent); }
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: var(--sans);
+  color: var(--ink);
+  background: var(--paper);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---- shared control-flag mark (magenta/orange split square) ---- */
+.flag-mark {
+  display: inline-block;
+  width: 0.72em;
+  height: 0.72em;
+  border-radius: 2px;
+  background: linear-gradient(135deg, var(--orange) 0 50%, var(--accent) 50% 100%);
+  transform: rotate(45deg);
+}
+
+/* ---- login ---- */
+.login {
+  max-width: 380px;
+  margin: 16vh auto;
+  padding: 32px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--hair);
+  border-radius: 18px;
+  box-shadow: 0 24px 60px -30px rgba(22, 19, 15, 0.35);
+}
+.login h1 {
+  margin: 0 0 4px;
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 30px;
+  letter-spacing: -0.5px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.login h1::before {
+  content: "";
+  width: 20px;
+  height: 20px;
+  border-radius: 3px;
+  background: linear-gradient(135deg, var(--orange) 0 50%, var(--accent) 50% 100%);
+  transform: rotate(45deg);
+}
 input {
-  padding: 12px; font-size: 16px; border: 1px solid #ccc; border-radius: 8px;
+  padding: 13px 14px;
+  font-size: 16px;
+  font-family: var(--sans);
+  border: 1px solid var(--hair);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  transition: border-color 0.15s;
+}
+input:focus {
+  outline: none;
+  border-color: var(--accent);
 }
 button {
-  padding: 10px 16px; border: 0; border-radius: 8px; background: var(--accent);
-  color: #fff; font-weight: 700; cursor: pointer;
+  padding: 12px 18px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--mono);
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: filter 0.15s;
 }
+button:hover:not(:disabled) { filter: brightness(1.06); }
 button:disabled { opacity: 0.4; cursor: default; }
-.err { color: #b91c1c; }
-.ok { color: #0a7a0a; }
-.hint { color: var(--muted); font-size: 14px; }
+.err { color: #b91c1c; font-size: 14px; margin: 0; }
+.ok { color: #0a7a0a; font-size: 14px; margin: 0; }
+.hint { color: var(--muted); font-size: 13px; font-family: var(--mono); }
 
+/* ---- app shell ---- */
 .app { display: flex; flex-direction: column; height: 100vh; }
 header {
-  display: flex; align-items: center; gap: 16px; padding: 10px 16px;
-  border-bottom: 1px solid #eee;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--hair);
+  background: var(--surface);
 }
-.brand { color: var(--accent); font-size: 18px; }
-nav { display: flex; gap: 8px; }
-nav button { background: transparent; color: var(--ink); text-transform: capitalize; }
+.brand {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 19px;
+  letter-spacing: -0.4px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.brand::before {
+  content: "";
+  width: 16px;
+  height: 16px;
+  border-radius: 2px;
+  background: linear-gradient(135deg, var(--orange) 0 50%, var(--accent) 50% 100%);
+  transform: rotate(45deg);
+}
+nav { display: flex; gap: 6px; }
+nav button {
+  background: transparent;
+  color: var(--muted);
+  text-transform: uppercase;
+  font-family: var(--mono);
+  font-weight: 600;
+  font-size: 12px;
+  padding: 8px 14px;
+  border-radius: 8px;
+}
+nav button:hover:not(.on) { color: var(--ink); filter: none; }
 nav button.on { background: var(--accent); color: #fff; }
-.out { margin-left: auto; background: transparent; color: var(--muted); }
+.out {
+  margin-left: auto;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+}
+.out:hover { filter: none; color: var(--ink); }
 
+/* ---- tabs / map / panels ---- */
 .tab { flex: 1; display: flex; min-height: 0; }
 .map { flex: 1; height: 100%; }
 .panel {
-  width: 320px; padding: 16px; overflow: auto; border-left: 1px solid #eee;
-  display: flex; flex-direction: column; gap: 10px;
+  width: 340px;
+  padding: 20px;
+  overflow: auto;
+  border-left: 1px solid var(--hair);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--surface);
 }
-.panel.wide { width: 100%; max-width: 640px; margin: 0 auto; }
-.coord { font-family: ui-monospace, monospace; font-size: 13px; color: #333; }
+.panel.wide { width: 100%; max-width: 680px; margin: 0 auto; border-left: 0; }
+.panel h2, .panel h3 {
+  font-family: var(--display);
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  margin: 0;
+}
+.coord {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--muted);
+}
 .list { list-style: none; padding: 0; margin: 0; }
 .list li {
-  display: flex; justify-content: space-between; align-items: center; gap: 8px;
-  padding: 8px 0; border-bottom: 1px solid #f0f0f0; font-size: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--hair);
+  font-size: 14px;
+}
+.usage {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--orange);
+  letter-spacing: 0.2px;
 }
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
-.chip { background: #eee; color: var(--ink); }
+.chip {
+  background: #f1eee8;
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 7px 12px;
+}
 .chip.on { background: var(--accent); color: #fff; }
-code { background: #f3f3f3; padding: 1px 5px; border-radius: 4px; }
 .chip.danger { background: #b91c1c; color: #fff; }
+code {
+  background: #f1eee8;
+  font-family: var(--mono);
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 5px;
+  font-size: 13px;
+}
 /* permanent flag labels on the map */
 .flabel {
-  background: #141414; color: #fff; border: 0; font-weight: 700;
-  font-family: ui-monospace, monospace; padding: 1px 5px; border-radius: 5px;
+  background: var(--ink);
+  color: #fff;
+  border: 0;
+  font-weight: 700;
+  font-family: var(--mono);
+  padding: 2px 6px;
+  border-radius: 6px;
+  letter-spacing: 0.3px;
 }
 .flabel::before { display: none; }
 
+/* ---- plate modal ---- */
 .plateModal {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.5);
-  display: flex; align-items: center; justify-content: center; z-index: 1000;
+  position: fixed;
+  inset: 0;
+  background: rgba(22, 19, 15, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
 }
 .plateCard {
-  background: #fff; border-radius: 16px; padding: 16px;
-  max-height: 92vh; overflow: auto; display: flex; flex-direction: column; gap: 12px;
+  background: var(--surface);
+  border-radius: 18px;
+  padding: 18px;
+  max-height: 92vh;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 .plateSvg { width: 320px; }
 .plateSvg svg { width: 100%; height: auto; }
 .plateBtns { display: flex; gap: 8px; justify-content: center; }
-

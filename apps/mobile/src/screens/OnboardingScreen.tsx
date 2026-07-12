@@ -1,7 +1,7 @@
-// Onboarding — "set up at home, run tomorrow" (decision P3-7A). Four steps,
-// all completable with signal at home; the trailhead then needs nothing.
-// Auth + permissions are ports so this screen works in the demo shell today
-// and wires to Supabase magic-link + expo-permissions in the dev build.
+// Onboarding — "set up at home, run tomorrow" (decision P3-7A). Steps all
+// completable with signal at home; the trailhead then needs nothing.
+// Auth is invisible (anonymous device account): the runner only enters
+// name + birth year + gender. Adapters live in ports/supabasePorts.ts.
 
 import { useState } from "react";
 import {
@@ -11,13 +11,21 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { color, touch, type as t } from "../theme";
+import { color, font, touch, type as t } from "../theme";
 import { strings } from "../strings";
 
 export interface OnboardingPorts {
-  /** magic-link auth; resolves when the user is signed in */
-  signIn(email: string): Promise<void>;
-  saveProfile(p: { displayName: string; birthYear: number; gender: "M" | "W" }): Promise<void>;
+  /** invisible anonymous sign-in; resolves when the device account exists */
+  signIn(): Promise<void>;
+  /** true when this device already has an account WITH a profile */
+  hasAccount(): Promise<boolean>;
+  saveProfile(p: {
+    displayName: string;
+    birthYear: number;
+    gender: "M" | "W";
+    /** contact address, stored unverified */
+    email: string;
+  }): Promise<void>;
   /** returns true when granted */
   requestLocation(): Promise<boolean>;
   requestNfc(): Promise<boolean>;
@@ -34,15 +42,17 @@ export function OnboardingScreen({
   onComplete: () => void;
 }) {
   const [step, setStep] = useState<Step>("welcome");
-  const [email, setEmail] = useState("");
   const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [birthYear, setBirthYear] = useState("");
   const [gender, setGender] = useState<"M" | "W" | null>(null);
   const [granted, setGranted] = useState({ loc: false, nfc: false, batt: false });
   const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
 
   const profileValid =
     name.trim().length > 0 &&
+    /^\S+@\S+\.\S+$/.test(email.trim()) &&
     /^\d{4}$/.test(birthYear) &&
     +birthYear > 1900 &&
     gender !== null;
@@ -55,17 +65,17 @@ export function OnboardingScreen({
 
         <TextInput
           style={styles.input}
-          placeholder="email (magic link sign-in)"
+          placeholder="display name"
+          value={name}
+          onChangeText={setName}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="email"
           autoCapitalize="none"
           keyboardType="email-address"
           value={email}
           onChangeText={setEmail}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="display name"
-          value={name}
-          onChangeText={setName}
         />
         <TextInput
           style={styles.input}
@@ -76,7 +86,8 @@ export function OnboardingScreen({
           onChangeText={setBirthYear}
         />
         <Text style={styles.why}>
-          Birth year and gender put you in your class: M/W, U14–O60.
+          Birth year and gender put you in your class — Elite and age classes,
+          M and W ranked separately.
         </Text>
         <View style={styles.genderRow}>
           {(["M", "W"] as const).map((g) => (
@@ -99,20 +110,46 @@ export function OnboardingScreen({
           disabled={!profileValid || busy}
           onPress={async () => {
             setBusy(true);
+            setErr("");
             try {
-              await ports.signIn(email.trim());
+              await ports.signIn();
               await ports.saveProfile({
                 displayName: name.trim(),
                 birthYear: +birthYear,
                 gender: gender!,
+                email: email.trim(),
               });
               setStep("anchored");
+            } catch {
+              setErr(strings.signInFail);
             } finally {
               setBusy(false);
             }
           }}
         >
-          <Text style={styles.ctaText}>{busy ? "…" : "Sign in"}</Text>
+          <Text style={styles.ctaText}>{busy ? "…" : "Start running"}</Text>
+        </Pressable>
+        {!!err && <Text style={styles.err}>{err}</Text>}
+
+        {/* sign-in shortcut (user request 2026-07-12): a device that already
+            has an account+profile skips sign-up, anchored AND permissions */}
+        <Pressable
+          style={styles.linkRow}
+          disabled={busy}
+          onPress={async () => {
+            setErr("");
+            setBusy(true);
+            try {
+              if (await ports.hasAccount()) onComplete();
+              else setErr(strings.noAccountYet);
+            } catch {
+              setErr(strings.signInFail);
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          <Text style={styles.link}>Already set up on this phone? Sign in ›</Text>
         </Pressable>
       </View>
     );
@@ -183,8 +220,8 @@ export function OnboardingScreen({
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: color.surface, padding: 24, gap: 12, justifyContent: "center" },
-  h1: { fontSize: t.nextControl, fontWeight: "700", color: color.onSurface },
-  p: { fontSize: t.body, color: color.onSurface },
+  h1: { fontSize: 34, fontFamily: font.display, color: color.onSurface, lineHeight: 36 },
+  p: { fontSize: t.body, color: color.onSurface, fontFamily: font.sans },
   why: { fontSize: t.min, color: color.muted },
   input: {
     borderWidth: 1,
@@ -208,6 +245,15 @@ const styles = StyleSheet.create({
   genderActive: { backgroundColor: color.accent, borderColor: color.accent },
   genderText: { fontSize: t.body, color: color.onSurface, fontWeight: "600" },
   genderTextActive: { color: color.onPanel },
+  err: { fontSize: t.min, color: color.error },
+  linkRow: { minHeight: touch.default, justifyContent: "center", marginTop: 4 },
+  link: {
+    fontSize: t.min - 1,
+    color: color.accent,
+    fontFamily: font.mono,
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
+  },
   permRow: { gap: 2, paddingVertical: 8, minHeight: touch.default },
   permLabel: { fontSize: t.body, fontWeight: "600", color: color.onSurface },
   cta: {
@@ -219,5 +265,11 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   ctaDisabled: { opacity: 0.4 },
-  ctaText: { color: color.onPanel, fontSize: t.body, fontWeight: "700" },
+  ctaText: {
+    color: color.onPanel,
+    fontSize: t.min - 1,
+    fontFamily: font.mono,
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
+  },
 });

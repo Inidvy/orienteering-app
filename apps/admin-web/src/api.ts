@@ -34,11 +34,35 @@ export async function createFlag(
   return data as { id: string; ufid: string };
 }
 
+/** flag_id -> names of every course that uses it (butterfly = still one name) */
+export async function listFlagUsage(): Promise<Record<string, string[]>> {
+  const [{ data: cf, error: e1 }, { data: courses, error: e2 }] = await Promise.all([
+    supabase.from("course_flags").select("flag_id, course_id"),
+    supabase.from("courses").select("id, name"),
+  ]);
+  if (e1) throw e1;
+  if (e2) throw e2;
+  const nameById = new Map((courses ?? []).map((c: any) => [c.id, c.name]));
+  const usage: Record<string, string[]> = {};
+  for (const row of (cf ?? []) as { flag_id: string; course_id: string }[]) {
+    const name = nameById.get(row.course_id) ?? "?";
+    (usage[row.flag_id] ??= []);
+    if (!usage[row.flag_id].includes(name)) usage[row.flag_id].push(name);
+  }
+  return usage;
+}
+
 export async function deleteFlag(id: string): Promise<void> {
-  // remove admin references first (tags, course memberships), then the flag.
-  // Fails if the flag has recorded runs — you don't delete a flag people ran.
-  await supabase.from("course_flags").delete().eq("flag_id", id);
+  // A flag that belongs to a course must NOT be deleted — that would silently
+  // break the course. Block here (backstop; the UI blocks first with names) and
+  // list the courses so the message is actionable.
+  const usage = await listFlagUsage();
+  const inCourses = usage[id];
+  if (inCourses?.length) {
+    throw new Error(`Used in ${inCourses.join(", ")} — remove it from those courses first.`);
+  }
   await supabase.from("tags").delete().eq("flag_id", id);
+  // Fails if the flag has recorded runs — you don't delete a flag people ran.
   const { error } = await supabase.from("flags").delete().eq("id", id);
   if (error) throw error;
 }
@@ -70,6 +94,14 @@ export async function createCourse(
   const { error: e2 } = await supabase.from("course_flags").insert(rows);
   if (e2) throw e2;
   return course.id;
+}
+
+export async function deleteCourse(id: string): Promise<void> {
+  // course_flags rows cascade away (FK ON DELETE CASCADE); the flags themselves
+  // stay. Fails if runs were recorded on this course (runs.course_id has no
+  // cascade) — a course people ran isn't silently erased.
+  const { error } = await supabase.from("courses").delete().eq("id", id);
+  if (error) throw error;
 }
 
 export async function listReports(): Promise<Report[]> {

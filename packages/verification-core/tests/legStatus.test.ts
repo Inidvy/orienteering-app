@@ -16,12 +16,12 @@ describe("legStatus — verified", () => {
 });
 
 describe("legStatus — partial (honest but weaker evidence)", () => {
-  it("QR start punch demotes to partial", () => {
+  it("QR punch is as valid as NFC — stays verified (user decision 2026-07-12)", () => {
     const leg = healthyLeg();
     leg.startPunch = punch("A", 0, "qr");
     const r = legStatus(leg, cfg);
-    expect(r.status).toBe("partial");
-    expect(r.reasons).toContain("start_punch_qr");
+    expect(r.status).toBe("verified");
+    expect(r.reasons).toEqual([]);
   });
 
   it("manual end punch demotes to partial", () => {
@@ -120,7 +120,7 @@ describe("legStatus — unverified (missing or spoof-shaped evidence)", () => {
 
   it("unverified outranks partial when both apply", () => {
     const leg = healthyLeg({ track: [] }); // proximity fail => unverified
-    leg.startPunch = punch("A", 0, "qr"); // would be partial alone
+    leg.startPunch = punch("A", 0, "manual"); // would be partial alone
     const r = legStatus(leg, cfg);
     expect(r.status).toBe("unverified");
   });

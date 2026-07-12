@@ -16,3 +16,6 @@ map/export_300dpi.*
 *.autosave
 tools/qr/node_modules/
 tools/qr/out/
+.agents/
+.claude/
+skills-lock.json

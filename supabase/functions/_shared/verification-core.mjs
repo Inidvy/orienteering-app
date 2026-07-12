@@ -1,7 +1,7 @@
 // packages/verification-core/src/types.ts
 var DEFAULT_TUNING = {
-  version: 1,
-  proximityToleranceM: 35,
+  version: 2,
+  proximityToleranceM: 10,
   speedCeilingMps: 8,
   maxTrackGapS: 30,
   speedWindowS: 10,
@@ -95,10 +95,10 @@ function legStatus(leg, cfg) {
     if (!speedCheckPasses(leg.track, cfg)) {
       demoteTo("unverified", "speed_ceiling_exceeded");
     }
-    if (leg.startPunch.method !== "nfc") {
+    if (leg.startPunch.method === "manual") {
       demoteTo("partial", `start_punch_${leg.startPunch.method}`);
     }
-    if (leg.endPunch.method !== "nfc") {
+    if (leg.endPunch.method === "manual") {
       demoteTo("partial", `end_punch_${leg.endPunch.method}`);
     }
     const gap = maxGapS(
@@ -142,7 +142,7 @@ function ageBand(birthYear, runDate) {
   const age = runDate.getUTCFullYear() - birthYear;
   if (age < 14) return "U14";
   if (age < 18) return "U18";
-  if (age < 40) return "open";
+  if (age < 40) return "Elite";
   if (age < 60) return "O40";
   return "O60";
 }
@@ -167,10 +167,16 @@ var CLASS_CHIPS = [
   "overall",
   "M",
   "W",
-  "U14",
-  "U18",
-  "O40",
-  "O60"
+  "M-Elite",
+  "W-Elite",
+  "M-U14",
+  "W-U14",
+  "M-U18",
+  "W-U18",
+  "M-O40",
+  "W-O40",
+  "M-O60",
+  "W-O60"
 ];
 function matchesChip(run, chip) {
   if (chip === "overall") return true;
@@ -180,7 +186,28 @@ function matchesChip(run, chip) {
     new Date(run.completedAtMs)
   );
   if (chip === "M" || chip === "W") return cls.startsWith(`${chip}-`);
-  return cls.endsWith(`-${chip}`);
+  return cls === chip;
+}
+var RERUN_COOLDOWN_MS = 7 * 24 * 36e5;
+function rankEligible(runs) {
+  const byUser = /* @__PURE__ */ new Map();
+  for (const r of runs) {
+    const list = byUser.get(r.userId) ?? [];
+    list.push(r);
+    byUser.set(r.userId, list);
+  }
+  const eligible = /* @__PURE__ */ new Set();
+  for (const list of byUser.values()) {
+    list.sort((a, b) => a.completedAtMs - b.completedAtMs);
+    let lastEligibleMs = -Infinity;
+    for (const r of list) {
+      if (r.completedAtMs - lastEligibleMs >= RERUN_COOLDOWN_MS) {
+        eligible.add(r.runId);
+        lastEligibleMs = r.completedAtMs;
+      }
+    }
+  }
+  return eligible;
 }
 function bestPerUser(runs) {
   const best = /* @__PURE__ */ new Map();
@@ -194,7 +221,10 @@ function bestPerUser(runs) {
 }
 function buildLeaderboard(runs, chip = "overall") {
   const inClass = runs.filter((r) => matchesChip(r, chip));
-  const ranked = bestPerUser(inClass.filter((r) => r.status === "verified")).sort(
+  const eligible = rankEligible(inClass);
+  const ranked = bestPerUser(
+    inClass.filter((r) => r.status === "verified" && eligible.has(r.runId))
+  ).sort(
     (a, b) => a.totalTimeMs - b.totalTimeMs || a.completedAtMs - b.completedAtMs
   ).map((run, i) => ({ rank: i + 1, run }));
   const rankedUsers = new Set(ranked.map((e) => e.run.userId));
@@ -289,6 +319,7 @@ function verifyRun(input) {
 export {
   CLASS_CHIPS,
   DEFAULT_TUNING,
+  RERUN_COOLDOWN_MS,
   ageBand,
   buildLeaderboard,
   checkElapsedBound,

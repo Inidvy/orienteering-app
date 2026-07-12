@@ -17,7 +17,7 @@ import {
 import Svg, { Circle, G, Path, Polygon, Text as SvgText } from "react-native-svg";
 import type { LatLon } from "@orienteering/verification-core";
 import area from "../../assets/hadiko-area.json";
-import { styleFor } from "./mapStyle";
+import { styleOf } from "./mapStyle";
 import { color } from "../theme";
 
 const meta = (area as any).meta as { center: { lat: number; lon: number } };
@@ -49,11 +49,11 @@ export interface CourseMapProps {
 export function CourseMap({ flags, nextIndex, width, height, topInset = 96, track }: CourseMapProps) {
   const mapLayer = useMemo(() => {
     const feats = (area as any).features as {
-      properties: { code: string };
+      properties: { code: string; c?: string | null; s?: string | null; w?: number; z?: number };
       geometry: { type: string; coordinates: any };
     }[];
     return [...feats]
-      .map((f, idx) => ({ f, st: styleFor(f.properties.code), idx }))
+      .map((f, idx) => ({ f, st: styleOf(f.properties), idx }))
       .sort((a, b) => a.st.z - b.st.z)
       .map(({ f, st, idx }) => {
         const g = f.geometry;
@@ -113,9 +113,14 @@ export function CourseMap({ flags, nextIndex, width, height, topInset = 96, trac
       );
     }
 
-    if (pts.length >= 2) {
-      const [sx, sy] = pts[0]!, [cx, cy] = pts[1]!;
-      const ang = (Math.atan2(cy - sy, cx - sx) * 180) / Math.PI + 90;
+    if (pts.length >= 1) {
+      // pre-start lock passes ONLY the start flag: triangle points north then
+      // (no course direction revealed); with the full course it points at C1
+      const [sx, sy] = pts[0]!;
+      const ang =
+        pts.length >= 2
+          ? (Math.atan2(pts[1]![1] - sy, pts[1]![0] - sx) * 180) / Math.PI + 90
+          : 0;
       const r = 19;
       els.push(
         <Polygon key="start"
@@ -242,6 +247,11 @@ export function CourseMap({ flags, nextIndex, width, height, topInset = 96, trac
                 simultaneousHandlers={[panRef, pinchRef]}
               >
                 <Animated.View
+                  // rasterize the (large) SVG into a GPU texture once, so
+                  // pan/zoom/rotate move a texture instead of re-rendering
+                  // thousands of vector paths per frame (lag fix 2026-07-12)
+                  renderToHardwareTextureAndroid
+                  shouldRasterizeIOS
                   style={{
                     position: "absolute",
                     left: layout.left,

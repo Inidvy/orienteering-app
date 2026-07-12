@@ -6,7 +6,7 @@
 import { StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import type { RunSession, ServerVerdict } from "@orienteering/run-engine";
 import { CourseMap } from "../map/CourseMap";
-import { color, type as t } from "../theme";
+import { color, font, type as t } from "../theme";
 import { strings } from "../strings";
 
 function fmt(ms: number): string {
@@ -91,23 +91,31 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: color.surface, padding: 16, gap: 12 },
   mapBox: { height: 200, borderRadius: 12, overflow: "hidden", backgroundColor: "#fff" },
   total: {
-    fontSize: t.timer,
-    fontWeight: "700",
+    fontSize: 64,
+    fontFamily: font.mono,
     fontVariant: ["tabular-nums"],
     color: color.onSurface,
+    letterSpacing: 1,
   },
-  chip: { fontSize: t.body, fontWeight: "600", paddingVertical: 4 },
+  chip: {
+    fontSize: t.min - 2,
+    fontFamily: font.mono,
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
+    paddingVertical: 4,
+  },
   chipVerified: { color: color.verified },
   chipOther: { color: color.warning },
   chipPending: { color: color.muted },
-  demotion: { fontSize: t.body, color: color.error },
+  demotion: { fontSize: t.body, color: color.error, fontFamily: font.sans },
   table: { gap: 8, marginTop: 8 },
   row: { flexDirection: "row", justifyContent: "space-between" },
-  cellLeg: { fontSize: t.body, color: color.onSurface, fontWeight: "600" },
+  cellLeg: { fontSize: t.body, color: color.onSurface, fontFamily: font.sansBold },
   cellTime: {
     fontSize: t.body,
     color: color.onSurface,
+    fontFamily: font.mono,
     fontVariant: ["tabular-nums"],
   },
-  cellRank: { fontSize: t.min, color: color.muted },
+  cellRank: { fontSize: t.min, color: color.muted, fontFamily: font.mono },
 });

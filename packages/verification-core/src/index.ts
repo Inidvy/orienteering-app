@@ -9,6 +9,7 @@ export {
   buildLeaderboard,
   findOwnRank,
   CLASS_CHIPS,
+  RERUN_COOLDOWN_MS,
   type ClassChip,
   type Leaderboard,
   type LeaderboardRun,

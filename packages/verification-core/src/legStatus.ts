@@ -8,11 +8,16 @@ import type { LegInput, LegResult, TrustStatus, TuningConfig } from "./types";
  *   proximity check fails ─────┼──▶ unverified   (spoof-shaped)
  *   speed ceiling exceeded ────┘
  *
- *   QR/manual punch ───────────┐
+ *   manual punch ──────────────┐
  *   track gap > maxTrackGapS ──┼──▶ partial      (honest but weaker evidence)
  *   clock basis lost ──────────┘
  *
- *   NFC both ends + track covers + checks pass ──▶ verified
+ *   NFC or QR both ends + track covers + checks pass ──▶ verified
+ *
+ * QR counts the same as NFC (user decision 2026-07-12): presence is proven by
+ * the strict 10 m / 1 Hz track proximity check, so a photographed QR without
+ * actually being at the flag still fails verification. Only typed short codes
+ * (manual) remain weaker evidence.
  */
 export function legStatus(leg: LegInput, cfg: TuningConfig): LegResult {
   const reasons: string[] = [];
@@ -62,11 +67,11 @@ export function legStatus(leg: LegInput, cfg: TuningConfig): LegResult {
       demoteTo("unverified", "speed_ceiling_exceeded");
     }
 
-    // --- partial class: honest but weaker evidence ---
-    if (leg.startPunch.method !== "nfc") {
+    // --- partial class: honest but weaker evidence (manual only; QR = NFC) ---
+    if (leg.startPunch.method === "manual") {
       demoteTo("partial", `start_punch_${leg.startPunch.method}`);
     }
-    if (leg.endPunch.method !== "nfc") {
+    if (leg.endPunch.method === "manual") {
       demoteTo("partial", `end_punch_${leg.endPunch.method}`);
     }
     const gap = maxGapS(

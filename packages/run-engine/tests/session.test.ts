@@ -144,11 +144,21 @@ describe("RunSession — provisional statuses (shared rules, decision 3A)", () =
     expect(legs.map((l) => l.status)).toEqual(["verified", "verified"]);
   });
 
-  it("QR punch shows as provisionally partial — the app never over-promises", () => {
+  it("QR punch is as valid as NFC — provisionally verified (user decision 2026-07-12)", () => {
     const s = new RunSession(COURSE, makeDeps());
     s.punch("S", "nfc", 0);
     runGps(s, 0, 120_000);
     s.punch("C1", "qr", 60_000);
+    s.punch("F", "nfc", 120_000);
+    const legs = s.provisionalLegs();
+    expect(legs.map((l) => l.status)).toEqual(["verified", "verified"]);
+  });
+
+  it("manual punch shows as provisionally partial — the app never over-promises", () => {
+    const s = new RunSession(COURSE, makeDeps());
+    s.punch("S", "nfc", 0);
+    runGps(s, 0, 120_000);
+    s.punch("C1", "manual", 60_000);
     s.punch("F", "nfc", 120_000);
     const legs = s.provisionalLegs();
     expect(legs[0]!.status).toBe("partial");
