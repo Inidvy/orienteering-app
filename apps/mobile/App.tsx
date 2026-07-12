@@ -3,7 +3,7 @@
 // Real adapters (Supabase auth, expo permissions, NFC, map tiles) replace the
 // mocks in the EAS dev build. Screens follow docs/design.md UI Specification.
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -12,6 +12,7 @@ import { RunSession, type CourseSpec } from "@orienteering/run-engine";
 import type { LeaderboardRun } from "@orienteering/verification-core";
 import { OnboardingScreen, type OnboardingPorts } from "./src/screens/OnboardingScreen";
 import { CourseMapPicker, type CoursePin } from "./src/screens/CourseMapPicker";
+import { loadCoursePins } from "./src/courses";
 import { RunScreen } from "./src/screens/RunScreen";
 import { FinishScreen } from "./src/screens/FinishScreen";
 import { LeaderboardScreen } from "./src/screens/LeaderboardScreen";
@@ -77,15 +78,24 @@ export default function App() {
 
 function Shell() {
   const [screen, setScreen] = useState<Screen>("onboarding");
+  const [pins, setPins] = useState<CoursePin[]>([DEMO_PIN]);
   const t0 = useRef(Date.now());
   const monotonicNow = () => Date.now() - t0.current;
 
   const queueRef = useRef<(TagRead | Error)[]>([]);
   const providerRef = useRef(mockPunchProvider(queueRef.current));
 
+  // load real courses from the DB (created in the admin); keep demo as fallback
+  useEffect(() => {
+    loadCoursePins()
+      .then((p) => { if (p.length) setPins(p); })
+      .catch(() => {});
+  }, []);
+
   const sessionRef = useRef<RunSession | null>(null);
-  const startRun = () => {
-    sessionRef.current = new RunSession(DEMO_COURSE, {
+  const startRun = (courseId: string) => {
+    const pin = pins.find((p) => p.spec.id === courseId) ?? pins[0]!;
+    sessionRef.current = new RunSession(pin.spec, {
       uuid: () => Math.random().toString(36).slice(2),
     });
     setScreen("run");
@@ -103,7 +113,7 @@ function Shell() {
     case "browse":
       return (
         <SafeAreaView style={{ flex: 1 }}>
-          <CourseMapPicker courses={[DEMO_PIN]} onSelect={() => startRun()} />
+          <CourseMapPicker courses={pins} onSelect={(id) => startRun(id)} />
         </SafeAreaView>
       );
 

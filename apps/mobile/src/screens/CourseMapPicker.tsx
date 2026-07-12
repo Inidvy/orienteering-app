@@ -2,8 +2,10 @@
 // its name, control count, length and difficulty, then start it. Rendered with
 // Leaflet inside a WebView (real OSM tiles, popups) — works in Expo Go.
 
+import { useEffect, useRef } from "react";
 import { WebView } from "react-native-webview";
 import { StyleSheet, View } from "react-native";
+import * as Location from "expo-location";
 import type { CourseSpec } from "@orienteering/run-engine";
 
 export interface CoursePin {
@@ -46,6 +48,12 @@ function html(courses: CoursePin[]): string {
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',
     {maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
   function sel(id){ if(window.ReactNativeWebView) window.ReactNativeWebView.postMessage(id); }
+  // live position marker, updated from React Native via window.setPos(lat,lon)
+  var me=null;
+  window.setPos=function(lat,lon){
+    if(!me){ me=L.circleMarker([lat,lon],{radius:8,color:'#2b6fd4',fillColor:'#2b6fd4',fillOpacity:1,weight:3}).addTo(map).bindTooltip('you'); }
+    else me.setLatLng([lat,lon]);
+  };
   var pts=[];
   courses.forEach(function(c){
     var icon = L.divIcon({className:'',iconSize:[26,26],iconAnchor:[13,13],
@@ -70,9 +78,31 @@ export function CourseMapPicker({
   courses: CoursePin[];
   onSelect: (courseId: string) => void;
 }) {
+  const webRef = useRef<WebView>(null);
+
+  // live GPS -> push into the Leaflet map as the "you" marker
+  useEffect(() => {
+    let sub: Location.LocationSubscription | undefined;
+    (async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") return;
+      sub = await Location.watchPositionAsync(
+        { accuracy: Location.Accuracy.High, distanceInterval: 5 },
+        (loc) => {
+          const { latitude, longitude } = loc.coords;
+          webRef.current?.injectJavaScript(
+            `window.setPos && window.setPos(${latitude},${longitude});true;`,
+          );
+        },
+      );
+    })();
+    return () => sub?.remove();
+  }, []);
+
   return (
     <View style={styles.root}>
       <WebView
+        ref={webRef}
         originWhitelist={["*"]}
         source={{ html: html(courses) }}
         onMessage={(e) => onSelect(e.nativeEvent.data)}
