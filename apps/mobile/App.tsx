@@ -11,7 +11,7 @@ import { StatusBar } from "expo-status-bar";
 import { RunSession, type CourseSpec } from "@orienteering/run-engine";
 import type { LeaderboardRun } from "@orienteering/verification-core";
 import { OnboardingScreen, type OnboardingPorts } from "./src/screens/OnboardingScreen";
-import { CourseBrowseScreen, type CourseListing } from "./src/screens/CourseBrowseScreen";
+import { CourseMapPicker, type CoursePin } from "./src/screens/CourseMapPicker";
 import { RunScreen } from "./src/screens/RunScreen";
 import { FinishScreen } from "./src/screens/FinishScreen";
 import { LeaderboardScreen } from "./src/screens/LeaderboardScreen";
@@ -33,13 +33,12 @@ const DEMO_COURSE: CourseSpec = {
   referenceLabel: "course record pace",
 };
 
-const DEMO_LISTING: CourseListing = {
+const DEMO_PIN: CoursePin = {
   spec: DEMO_COURSE,
-  name: "Åsen Short (demo)",
+  name: "Hadiko Sprint (demo)",
   lengthM: 1200,
-  recordMs: 113_000,
-  recordHolder: "demo runner",
-  openFlagReports: 0,
+  difficulty: "Medium",
+  start: DEMO_COURSE.flagPositions.S!,
 };
 
 const REGISTRY: Record<string, string> = {
@@ -104,11 +103,7 @@ function Shell() {
     case "browse":
       return (
         <SafeAreaView style={{ flex: 1 }}>
-          <CourseBrowseScreen
-            courses={[DEMO_LISTING]}
-            onStart={startRun}
-            onLeaderboard={() => setScreen("leaderboard")}
-          />
+          <CourseMapPicker courses={[DEMO_PIN]} onSelect={() => startRun()} />
         </SafeAreaView>
       );
 
@@ -141,7 +136,7 @@ function Shell() {
       return (
         <SafeAreaView style={{ flex: 1 }}>
           <LeaderboardScreen
-            courseName={DEMO_LISTING.name}
+            courseName={DEMO_PIN.name}
             runs={DEMO_BOARD}
             viewerId="me"
           />
