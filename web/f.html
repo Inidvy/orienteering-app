@@ -1,50 +1,77 @@
 <!doctype html>
-<html lang="en">
+<html lang="de">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>OL-KA control</title>
-<meta name="description" content="You found an OL-KA orienteering control. Here's what it is." />
+<title>OL-KA — Posten</title>
+<meta name="description" content="Du hast einen OL-KA-Posten gefunden. Das ist Orientierungslauf in Karlsruhe." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=IBM+Plex+Mono:wght@400;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="/style.css" />
+<style>
+  .found { min-height: 100vh; display: flex; flex-direction: column; }
+  .found-hero {
+    flex: 1; display: grid; place-content: center; text-align: center;
+    padding: 40px 24px;
+    background:
+      linear-gradient(160deg, #fff 0 58%, var(--orange) 58% 100%);
+  }
+  .flagbig {
+    width: 88px; height: 88px; margin: 0 auto 22px;
+    background: linear-gradient(135deg, #fff 0 50%, var(--orange) 50% 100%);
+    border: 4px solid var(--ink);
+  }
+  .found .eyebrow { text-align: center; }
+  .code-big {
+    font-family: var(--mono); font-weight: 700;
+    font-size: clamp(3.4rem, 18vw, 7rem); letter-spacing: 0.12em;
+    line-height: 1; margin: 0 0 6px; color: var(--ink);
+  }
+  .found h1 { font-size: clamp(1.7rem, 6vw, 2.6rem); margin: 22px 0 10px; }
+  .found .lead { margin: 0 auto 26px; max-width: 30ch; color: #4a2a10; }
+  .found .cta-row { justify-content: center; }
+  /* sits on the orange band -> dark for contrast */
+  #open { background: var(--ink); color: #fff; }
+  #open:hover { background: #000; }
+  .found .btn.ghost { box-shadow: inset 0 0 0 2px var(--ink); }
+  .found-more {
+    background: var(--ink); color: #fff; padding: 40px 24px; text-align: center;
+  }
+  .found-more h2 { color: #fff; }
+  .found-more p { margin: 0 auto 18px; max-width: 44ch; color: #cbc6bf; }
+  .found-more a { color: var(--orange); }
+</style>
 </head>
 <body>
-<main class="wrap">
-  <header class="hero">
-    <div class="logo">OL<span>·</span>KA</div>
-    <div class="badge">Control <b id="ufid">…</b></div>
-    <h1>You found an orienteering control.</h1>
-    <p class="lead">
-      This is a fixed OL-KA control flag in Karlsruhe. With the OL-KA app you can
-      run a timed course between flags like this one, punch them as you go, and
-      see how your time ranks.
-    </p>
-    <div class="cta">
-      <a class="btn" id="open" href="#">Open in the OL-KA app</a>
-      <a class="btn ghost" href="/#get">Get the app</a>
+<div class="found">
+  <div class="found-hero">
+    <div class="flagbig" aria-hidden="true"></div>
+    <p class="eyebrow">OL·KA · Posten gefunden</p>
+    <p class="code-big" id="code">····</p>
+    <h1>Du stehst an einem Orientierungslauf-Posten.</h1>
+    <p class="lead">Mit der OL-KA-App läufst du eine Bahn zwischen solchen Posten,
+      stempelst sie unterwegs und siehst, wie deine Zeit sich einreiht.</p>
+    <div class="cta-row">
+      <a class="btn" id="open" href="#more">In der App öffnen</a>
+      <a class="btn ghost" href="/#app">App holen</a>
     </div>
-    <p class="hint" id="hint">Don't have the app yet? That's what the button on the right is for.</p>
-  </header>
+  </div>
 
-  <section id="how" class="how">
-    <h2>What is this?</h2>
-    <p>
-      OL-KA turns Karlsruhe into a permanent orienteering course. Flags stay out
-      all year. Anyone can run a course any day, get an honest verified time, and
-      compare with everyone else in their class (M/W, U14–O60).
-    </p>
-    <a class="btn ghost" href="/#how">See how it works →</a>
-  </section>
-
-  <footer><p>OL-KA · <a href="/">ol-ka.de</a></p></footer>
-</main>
+  <div class="found-more" id="more">
+    <h2>Was ist OL-KA?</h2>
+    <p>OL-KA macht Karlsruhe zur permanenten Orientierungslauf-Karte. Feste Posten,
+      jederzeit laufbar, mit ehrlich geprüften Zeiten und einer Bestenliste für
+      jede Klasse.</p>
+    <a class="btn" href="/#lauf">So funktioniert's →</a>
+  </div>
+</div>
 <script>
-  // /f/URHNCL -> URHNCL  (works with path or ?c= fallback)
   var m = location.pathname.match(/\/f\/([A-Za-z0-9]+)/);
-  var ufid = (m && m[1]) || new URLSearchParams(location.search).get("c") || "";
-  ufid = ufid.toUpperCase();
-  document.getElementById("ufid").textContent = ufid || "—";
-  // deep link into the app (custom scheme + universal link both point here)
-  document.getElementById("open").href = ufid ? "olka://f/" + ufid : "/#get";
+  var code = (m && m[1]) || new URLSearchParams(location.search).get("c") || "";
+  code = code.toUpperCase();
+  document.getElementById("code").textContent = code || "—";
+  document.getElementById("open").href = code ? "olka://f/" + code : "/#app";
 </script>
 </body>
 </html>

@@ -1,49 +1,108 @@
 <!doctype html>
-<html lang="en">
+<html lang="de">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>OL-KA — Orienteering Karlsruhe</title>
-<meta name="description" content="Permanent orienteering courses in Karlsruhe. Punch flags, get timed, climb the leaderboard." />
+<title>OL-KA — Orientierungslauf in Karlsruhe</title>
+<meta name="description" content="Karlsruhe ist deine Orientierungslauf-Karte. Feste Posten, jederzeit laufen, echte Zeiten, ehrliche Bestenliste." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=IBM+Plex+Mono:wght@400;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
-<main class="wrap">
-  <header class="hero">
-    <div class="logo">OL<span>·</span>KA</div>
-    <h1>Orienteering, any day, in Karlsruhe.</h1>
-    <p class="lead">
-      Fixed control flags around the city. Open the app, pick a course, run it,
-      punch each flag — get your time and your place on the leaderboard.
-    </p>
-    <div class="cta">
-      <a class="btn" href="#get">Get the app</a>
-      <a class="btn ghost" href="#how">How it works</a>
+<header class="top">
+  <span class="brand"><span class="flag"></span> OL·KA</span>
+  <nav>
+    <a href="#was">Was</a>
+    <a href="#lauf">So läuft's</a>
+    <a href="#app">App</a>
+  </nav>
+</header>
+
+<main class="course">
+  <div class="spine" aria-hidden="true"></div>
+
+  <!-- START -->
+  <section class="leg hero" id="start">
+    <div class="ctrl start" aria-hidden="true"></div>
+    <p class="eyebrow">Start · Karlsruhe · 49.01°N 8.42°E</p>
+    <h1>Orientierung,<br /><span>jeden Tag.</span></h1>
+    <p class="lead">Feste Posten stehen das ganze Jahr draußen. Öffne die App,
+      wähl eine Bahn, lauf sie, stemple jeden Posten — und sieh deine Zeit.</p>
+    <div class="cta-row">
+      <a class="btn" href="#app">Hol dir die App →</a>
+      <a class="btn ghost" href="#lauf">So läuft's</a>
     </div>
-  </header>
 
-  <section id="how" class="how">
-    <h2>How it works</h2>
-    <ol>
-      <li><b>Pick a course</b> on the map in the app.</li>
-      <li><b>Run</b> — the app records your GPS track with the screen off.</li>
-      <li><b>Punch each flag</b> — tap it with your phone (NFC) or scan its QR / type its number.</li>
-      <li><b>Get ranked</b> — your run is verified (you were really there, on a real track) and placed on the leaderboard for your class.</li>
-    </ol>
-  </section>
-
-  <section id="get" class="get">
-    <h2>Get the app</h2>
-    <p>Android and iPhone. Coming to the stores — for now, ask the OL-KA crew for a test link.</p>
-    <div class="stores">
-      <span class="store">Google Play — soon</span>
-      <span class="store">App Store — soon</span>
+    <div class="terrain" aria-hidden="true">
+      <div><b>∞</b>jederzeit laufbar<br />keine Startzeit</div>
+      <div><b>NFC</b>+ GPS geprüft<br />ehrliche Zeit</div>
+      <div><b>M/W</b>alle Klassen<br />U14 bis Elite</div>
     </div>
   </section>
 
-  <footer>
-    <p>OL-KA · Orienteering Karlsruhe · <a href="/">ol-ka.de</a></p>
-  </footer>
+  <!-- CONTROL 1 -->
+  <section class="leg" id="was">
+    <div class="ctrl">1</div>
+    <p class="eyebrow">Posten 1 · Was ist OL-KA</p>
+    <h2>Die Stadt ist die Karte.</h2>
+    <p>OL-KA macht Karlsruhe zur permanenten Orientierungslauf-Karte. An festen
+      Punkten hängen Posten mit einem Code. Kein Wettkampf-Termin, kein Aufbau —
+      du läufst, wann du willst, so oft du willst.</p>
+    <div class="desc">
+      <div class="row"><span></span><span>Posten</span><span>Code</span></div>
+      <div class="row"><span>△</span><span>Start</span><span class="code">PZKU</span></div>
+      <div class="row"><span>1</span><span>Wegkreuzung</span><span class="code">MKRZ</span></div>
+      <div class="row"><span>◎</span><span>Ziel</span><span class="code">UZAG</span></div>
+    </div>
+  </section>
+
+  <!-- CONTROL 2 -->
+  <section class="leg" id="lauf">
+    <div class="ctrl">2</div>
+    <p class="eyebrow">Posten 2 · So läuft's</p>
+    <h2>Vier Schritte, eine Bahn.</h2>
+    <div class="steps">
+      <div class="step"><span class="n">1</span><div>
+        <h3>Bahn wählen</h3><p>Auf der Karte in der App eine Bahn aussuchen — mit Länge, Postenzahl und Schwierigkeit.</p></div></div>
+      <div class="step"><span class="n">2</span><div>
+        <h3>Laufen</h3><p>Die App zeichnet deine Strecke per GPS auf, auch mit ausgeschaltetem Bildschirm.</p></div></div>
+      <div class="step"><span class="n">3</span><div>
+        <h3>Stempeln</h3><p>An jedem Posten das Handy antippen (NFC) oder den QR scannen — die Zeit stoppt am Posten.</p></div></div>
+      <div class="step"><span class="n">4</span><div>
+        <h3>In die Bestenliste</h3><p>Deine Runde wird geprüft (wirklich dort gewesen, echte Strecke) und in deiner Klasse gewertet.</p></div></div>
+    </div>
+  </section>
+
+  <!-- CONTROL 3 -->
+  <section class="leg" id="fair">
+    <div class="ctrl">3</div>
+    <p class="eyebrow">Posten 3 · Ehrlich gemessen</p>
+    <h2>Eine Zeit, der man glaubt.</h2>
+    <p>Andere Apps prüfen nur GPS (leicht zu faken) oder nur einen QR-Code
+      (abfotografierbar). OL-KA verlangt beides: du hast den Posten physisch
+      gestempelt <em>und</em> deine GPS-Strecke passt dazu. Nur dann bist du
+      „verifiziert" auf der Bestenliste — pro Gesamtzeit und pro Teilstrecke.</p>
+  </section>
+
+  <!-- FINISH -->
+  <section class="leg finish-leg" id="app">
+    <div class="ctrl finish" aria-hidden="true"></div>
+    <p class="eyebrow">Ziel · Los geht's</p>
+    <h2>Hol dir die App.</h2>
+    <p class="lead">Android und iPhone. Bald in den Stores — bis dahin gibt's beim
+      OL-KA-Team einen Test-Link.</p>
+    <div>
+      <span class="store">Google Play — bald</span>
+      <span class="store">App Store — bald</span>
+    </div>
+  </section>
 </main>
+
+<footer>
+  <span>OL·KA · Orientierungslauf Karlsruhe</span>
+  <span>ol-ka.de · 49.0184, 8.4289</span>
+</footer>
 </body>
 </html>
