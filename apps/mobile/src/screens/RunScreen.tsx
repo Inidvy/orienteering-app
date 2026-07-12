@@ -67,7 +67,6 @@ export function RunScreen({
   const [flow, setFlow] = useState<PunchFlowState>(punchFlowInitial);
   const [elapsed, setElapsed] = useState<number | undefined>();
   const [feedback, setFeedback] = useState<string | null>(null);
-  const [compassOn, setCompassOn] = useState(true);
   const [showFallback, setShowFallback] = useState(false);
   const flowRef = useRef(flow);
   flowRef.current = flow;
@@ -199,20 +198,7 @@ export function RunScreen({
           width={screenW}
           height={screenH}
         />
-        {compassOn && (
-          <Pressable
-            style={styles.compass}
-            onPress={() => setCompassOn(false)}
-            accessibilityLabel="compass (tap to hide)"
-          >
-            <Text style={styles.compassText}>N▲</Text>
-          </Pressable>
-        )}
-        {!compassOn && (
-          <Pressable style={styles.compassGhost} onPress={() => setCompassOn(true)}>
-            <Text style={styles.compassGhostText}>◦</Text>
-          </Pressable>
-        )}
+        {/* the rotating compass lives inside CourseMap */}
       </View>
 
       <View style={[styles.topBar, { paddingTop: insets.top + 8 }]}>

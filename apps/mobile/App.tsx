@@ -113,31 +113,18 @@ function Shell() {
       );
 
     case "run":
-      // RunScreen handles its own insets (full-bleed map behind the notch)
+      // RunScreen handles its own insets (full-bleed map behind the notch).
+      // Punch by scanning a plate QR or typing the flag number (QR/# button).
       return (
-        <View style={{ flex: 1 }}>
-          <RunScreen
-            session={sessionRef.current!}
-            punchProvider={providerRef.current}
-            resolveTag={(uid) => REGISTRY[uid]}
-            monotonicNow={monotonicNow}
-            onFinished={() => setScreen("finish")}
-            onAbandoned={() => setScreen("browse")}
-            onExit={() => setScreen("browse")}
-          />
-          {/* DEV: simulate the next tag read (removed in field builds) */}
-          <View style={styles.devRow}>
-            {Object.keys(REGISTRY).map((uid) => (
-              <Pressable
-                key={uid}
-                style={styles.devBtn}
-                onPress={() => queueRef.current.push({ tagUid: uid })}
-              >
-                <Text style={styles.devText}>{uid}</Text>
-              </Pressable>
-            ))}
-          </View>
-        </View>
+        <RunScreen
+          session={sessionRef.current!}
+          punchProvider={providerRef.current}
+          resolveTag={(uid) => REGISTRY[uid]}
+          monotonicNow={monotonicNow}
+          onFinished={() => setScreen("finish")}
+          onAbandoned={() => setScreen("browse")}
+          onExit={() => setScreen("browse")}
+        />
       );
 
     case "finish":
@@ -167,14 +154,6 @@ function Shell() {
 }
 
 const styles = StyleSheet.create({
-  devRow: {
-    flexDirection: "row",
-    gap: 8,
-    padding: 8,
-    backgroundColor: "#f3f4f6",
-  },
-  devBtn: { padding: 8, backgroundColor: "#e5e7eb", borderRadius: 6 },
-  devText: { fontSize: t.min - 2, color: color.muted },
   link: { padding: 16, backgroundColor: color.surface },
   linkText: { fontSize: t.body, color: color.accent, fontWeight: "600" },
 });
