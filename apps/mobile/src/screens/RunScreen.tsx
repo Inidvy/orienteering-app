@@ -385,7 +385,7 @@ const styles = StyleSheet.create({
     backgroundColor: color.panel,
     borderRadius: 12,
     padding: 12,
-    minWidth: 190,
+    alignSelf: "flex-start", // background hugs the content, no fixed width
   },
   descTitle: {
     color: color.onPanel,
