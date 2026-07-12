@@ -1,0 +1,10 @@
+# The public OL-KA site lives in web/ (static, no build step).
+[build]
+  publish = "web"
+  command = ""
+
+# /f/<UFID> -> the control page (also covered by web/_redirects)
+[[redirects]]
+  from = "/f/*"
+  to = "/f.html"
+  status = 200
