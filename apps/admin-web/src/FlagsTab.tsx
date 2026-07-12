@@ -3,6 +3,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { createFlag, listFlags } from "./api";
 import { Plate } from "./Plate";
+import { setupBaseMap } from "./mapBase";
 
 type Flag = Awaited<ReturnType<typeof listFlags>>[number];
 
@@ -29,11 +30,7 @@ export function FlagsTab() {
   };
 
   useEffect(() => {
-    const map = L.map("flagmap").setView([49.0184, 8.4289], 15);
-    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19,
-      attribution: "© OpenStreetMap",
-    }).addTo(map);
+    const map = setupBaseMap("flagmap");
     layerRef.current = L.layerGroup().addTo(map);
     map.on("click", (e: L.LeafletMouseEvent) => {
       setPicked({ lat: e.latlng.lat, lon: e.latlng.lng });

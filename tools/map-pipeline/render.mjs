@@ -8,8 +8,8 @@ import sharp from "sharp";
 
 const dir = path.dirname(fileURLToPath(import.meta.url));
 const GJ = path.join(dir, "..", "..", "map", "derived", "hadiko.geojson");
-const OUT_PNG = path.join(dir, "..", "..", "apps", "mobile", "assets", "hadiko-map.png");
-const OUT_BOUNDS = path.join(dir, "..", "..", "apps", "mobile", "assets", "hadiko-bounds.json");
+const OUT_PNG = path.join(dir, "..", "..", "apps", "admin-web", "public", "omap.png");
+const OUT_BOUNDS = path.join(dir, "..", "..", "apps", "admin-web", "public", "omap-bounds.json");
 
 const fc = JSON.parse(fs.readFileSync(GJ, "utf8"));
 
